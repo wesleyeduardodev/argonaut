@@ -12,7 +12,7 @@ interface Provider {
 }
 
 interface ProviderSelectorProps {
-  onSelect: (providerId: number, model: string) => void;
+  onSelect: (providerId: number, model: string, providerType: string) => void;
 }
 
 export default function ProviderSelector({ onSelect }: ProviderSelectorProps) {
@@ -29,7 +29,7 @@ export default function ProviderSelector({ onSelect }: ProviderSelectorProps) {
       if (defaultProvider) {
         setSelectedId(defaultProvider.id);
         setSelectedModel(defaultProvider.defaultModel);
-        onSelect(defaultProvider.id, defaultProvider.defaultModel);
+        onSelect(defaultProvider.id, defaultProvider.defaultModel, defaultProvider.provider);
       }
     }
   }, []);
@@ -43,13 +43,14 @@ export default function ProviderSelector({ onSelect }: ProviderSelectorProps) {
     const provider = providers.find((p) => p.id === id);
     if (provider) {
       setSelectedModel(provider.defaultModel);
-      onSelect(id, provider.defaultModel);
+      onSelect(id, provider.defaultModel, provider.provider);
     }
   }
 
   function handleModelChange(model: string) {
     setSelectedModel(model);
-    if (selectedId) onSelect(selectedId, model);
+    const provider = providers.find((p) => p.id === selectedId);
+    if (selectedId && provider) onSelect(selectedId, model, provider.provider);
   }
 
   const currentProvider = providers.find((p) => p.id === selectedId);

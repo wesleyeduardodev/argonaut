@@ -37,3 +37,28 @@ export interface ProviderConfig {
   label: string;
   models: ProviderModel[];
 }
+
+export interface ChatSessionSummary {
+  id: number;
+  title: string;
+  provider: string | null;
+  model: string | null;
+  updatedAt: string;
+  preview: string;
+}
+
+export interface ChatSessionDetail {
+  id: number;
+  title: string;
+  provider: string | null;
+  model: string | null;
+  messages: ChatMessageDTO[];
+}
+
+export interface ChatMessageDTO {
+  id: number;
+  role: "user" | "assistant";
+  content: string;
+  toolCalls?: ToolCallResult[];
+  createdAt: string;
+}

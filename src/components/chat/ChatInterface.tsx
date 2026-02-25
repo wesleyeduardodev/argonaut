@@ -1,13 +1,21 @@
 "use client";
 
-import { useState, useRef, useCallback } from "react";
-import type { ChatMessage, ToolCallResult, DebugLogEntry } from "@/types";
+import { useState, useRef, useCallback, useEffect } from "react";
+import type { ChatMessage, ToolCallResult, DebugLogEntry, ChatSessionDetail } from "@/types";
 import MessageList from "./MessageList";
 import ChatInput from "./ChatInput";
 import ProviderSelector from "./ProviderSelector";
 import ArgoSelector from "./ArgoSelector";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+
+interface ChatInterfaceProps {
+  sessionId: number | null;
+  onSessionCreated: (id: number) => void;
+  onMessageSaved: () => void;
+  onToggleSidebar: () => void;
+  sidebarOpen: boolean;
+}
 
 const QUICK_ACTIONS = [
   { label: "⟳ Listar aplicações", prompt: "Liste todas as aplicações ArgoCD com status de sync e health" },
@@ -39,15 +47,47 @@ function now() {
   });
 }
 
-export default function ChatInterface() {
+export default function ChatInterface({
+  sessionId,
+  onSessionCreated,
+  onMessageSaved,
+  onToggleSidebar,
+  sidebarOpen,
+}: ChatInterfaceProps) {
   const router = useRouter();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const providerRef = useRef<{ id: number; model: string } | null>(null);
+  const [loadingHistory, setLoadingHistory] = useState(false);
+  const providerRef = useRef<{ id: number; model: string; providerType: string } | null>(null);
   const argoRef = useRef<number | null>(null);
+  const sessionRef = useRef<number | null>(sessionId);
 
-  const handleProviderSelect = useCallback((id: number, model: string) => {
-    providerRef.current = { id, model };
+  // Load messages when sessionId is provided
+  useEffect(() => {
+    if (!sessionId) return;
+    sessionRef.current = sessionId;
+    setLoadingHistory(true);
+
+    fetch(`/api/sessions/${sessionId}/messages`)
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data: ChatSessionDetail | null) => {
+        if (data && sessionRef.current === sessionId) {
+          setMessages(
+            data.messages.map((m) => ({
+              role: m.role,
+              content: m.content,
+              toolCalls: m.toolCalls,
+              status: "done" as const,
+            }))
+          );
+        }
+      })
+      .catch(() => {})
+      .finally(() => setLoadingHistory(false));
+  }, [sessionId]);
+
+  const handleProviderSelect = useCallback((id: number, model: string, providerType: string) => {
+    providerRef.current = { id, model, providerType };
   }, []);
 
   const handleArgoSelect = useCallback((id: number) => {
@@ -59,6 +99,43 @@ export default function ChatInterface() {
     router.push("/login");
   }
 
+  async function saveMessage(
+    sid: number,
+    role: string,
+    content: string,
+    toolCalls?: ToolCallResult[]
+  ) {
+    try {
+      await fetch(`/api/sessions/${sid}/messages`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ role, content, toolCalls }),
+      });
+      onMessageSaved();
+    } catch {
+      // fire-and-forget
+    }
+  }
+
+  async function ensureSession(firstMessage: string): Promise<number> {
+    if (sessionRef.current) return sessionRef.current;
+
+    const title = firstMessage.slice(0, 80);
+    const provider = providerRef.current?.providerType || null;
+    const model = providerRef.current?.model || null;
+
+    const res = await fetch("/api/sessions", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ title, provider, model }),
+    });
+
+    const session = await res.json();
+    sessionRef.current = session.id;
+    onSessionCreated(session.id);
+    return session.id;
+  }
+
   async function handleSend(content: string) {
     if (!providerRef.current || !argoRef.current) return;
 
@@ -66,6 +143,10 @@ export default function ChatInterface() {
     const newMessages = [...messages, userMessage];
     setMessages(newMessages);
     setIsLoading(true);
+
+    // Create session if needed and save user message
+    const sid = await ensureSession(content);
+    saveMessage(sid, "user", content);
 
     const logs: DebugLogEntry[] = [];
     function log(direction: "sent" | "received", label: string, data: unknown) {
@@ -201,6 +282,14 @@ export default function ChatInterface() {
           debugLogs: logs,
         },
       ]);
+
+      // Save assistant message after stream completes
+      saveMessage(
+        sid,
+        "assistant",
+        assistantText,
+        toolCalls.length > 0 ? toolCalls : undefined
+      );
     } catch (error) {
       const raw = error instanceof Error ? error.message : "Erro de rede";
       log("received", "Fetch error", { message: raw });
@@ -218,8 +307,19 @@ export default function ChatInterface() {
     <div className="flex flex-col h-screen">
       <header className="border-b border-border px-4 py-2">
         <div className="max-w-3xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <h1 className="font-display text-primary font-semibold text-lg tracking-tight">
+          <div className="flex items-center gap-2 md:gap-4">
+            <button
+              onClick={onToggleSidebar}
+              className="p-2 text-text-muted hover:text-text rounded-lg hover:bg-surface-hover transition-colors"
+              title={sidebarOpen ? "Fechar sidebar" : "Abrir sidebar"}
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
+                <line x1="3" y1="6" x2="21" y2="6" />
+                <line x1="3" y1="12" x2="21" y2="12" />
+                <line x1="3" y1="18" x2="21" y2="18" />
+              </svg>
+            </button>
+            <h1 className="font-display text-primary font-semibold text-lg tracking-tight hidden sm:block">
               ⎈ Argonaut <span className="text-primary">AI</span>
             </h1>
             <ProviderSelector onSelect={handleProviderSelect} />
@@ -252,7 +352,7 @@ export default function ChatInterface() {
       </header>
 
       <div className="flex-1 overflow-hidden flex flex-col max-w-3xl mx-auto w-full">
-        <MessageList messages={messages} onQuickAction={handleSend} />
+        <MessageList messages={messages} onQuickAction={handleSend} loading={loadingHistory} />
 
         {messages.length > 0 && !isLoading && (
           <div className="px-4 pb-2">

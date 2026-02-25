@@ -14,14 +14,23 @@ const EMPTY_ACTIONS = [
 interface MessageListProps {
   messages: ChatMessage[];
   onQuickAction: (prompt: string) => void;
+  loading?: boolean;
 }
 
-export default function MessageList({ messages, onQuickAction }: MessageListProps) {
+export default function MessageList({ messages, onQuickAction, loading }: MessageListProps) {
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
+
+  if (loading) {
+    return (
+      <div className="flex-1 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-2 border-primary border-t-transparent" />
+      </div>
+    );
+  }
 
   if (messages.length === 0) {
     return (
