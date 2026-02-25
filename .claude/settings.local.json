@@ -16,7 +16,8 @@
       "Bash(cd /c/Users/wesle/OneDrive/Documentos/projetos-git/mcp-argo && npx tsx prisma/seed.ts 2>&1)",
       "Bash(cd /c/Users/wesle/OneDrive/Documentos/projetos-git/mcp-argo && npx next build 2>&1)",
       "Bash(cd:*)",
-      "Bash(head:*)"
+      "Bash(head:*)",
+      "WebFetch(domain:cd.apps.argoproj.io)"
     ]
   }
 }
