@@ -208,7 +208,11 @@ export class ArgoClient {
   // ─── Restart (resource actions) ───
   // Ref: ResourceActionRunRequest { name, namespace, resourceName, version, group, kind, action }
   // v1 endpoint (body = plain string), v2 endpoint (body = object)
-  async restartApplication(name: string): Promise<unknown> {
+  async restartApplication(
+    name: string,
+    resourceName?: string,
+    resourceKind?: string
+  ): Promise<unknown> {
     const app = (await this.getApplication(name)) as {
       metadata: { name: string };
       spec: { destination: { namespace: string } };
@@ -224,13 +228,32 @@ export class ArgoClient {
       }>;
     };
 
-    const restartTargets = (tree.nodes || []).filter(
+    let restartTargets = (tree.nodes || []).filter(
       (n) => n.kind === "Deployment" || n.kind === "StatefulSet"
     );
 
+    // Filter by resource kind if specified
+    if (resourceKind) {
+      restartTargets = restartTargets.filter((n) => n.kind === resourceKind);
+    }
+
+    // Filter by resource name if specified (case-insensitive partial match)
+    if (resourceName) {
+      const search = resourceName.toLowerCase();
+      restartTargets = restartTargets.filter((n) =>
+        n.name.toLowerCase().includes(search)
+      );
+    }
+
     if (restartTargets.length === 0) {
+      const filters = [];
+      if (resourceName) filters.push(`name containing "${resourceName}"`);
+      if (resourceKind) filters.push(`kind "${resourceKind}"`);
+      const filterMsg = filters.length > 0
+        ? ` matching ${filters.join(" and ")}`
+        : "";
       throw new Error(
-        `No Deployments or StatefulSets found in application "${name}"`
+        `No Deployments or StatefulSets found${filterMsg} in application "${name}"`
       );
     }
 

@@ -55,7 +55,11 @@ export async function executeTool(
         result = await client.deleteApplication(args.name as string);
         break;
       case "restart_application":
-        result = await client.restartApplication(args.name as string);
+        result = await client.restartApplication(
+          args.name as string,
+          args.resource_name as string | undefined,
+          args.resource_kind as string | undefined
+        );
         break;
       case "list_projects":
         result = await client.listProjects();

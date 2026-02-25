@@ -126,11 +126,13 @@ export const ARGOCD_TOOLS: ToolDefinition[] = [
   },
   {
     name: "restart_application",
-    description: "Perform a rolling restart of all Deployments and StatefulSets in an application (equivalent to kubectl rollout restart)",
+    description: "Rolling restart of Deployments/StatefulSets in an application. Targets specific resources when resource_name or resource_kind is provided; restarts all if omitted.",
     parameters: {
       type: "object",
       properties: {
-        name: { type: "string", description: "The application name to restart" },
+        name: { type: "string", description: "The application name" },
+        resource_name: { type: "string", description: "Specific resource name to restart (e.g. 'backend', 'frontend'). Supports partial match. If omitted, restarts all." },
+        resource_kind: { type: "string", description: "Filter by resource kind", enum: ["Deployment", "StatefulSet"] },
       },
       required: ["name"],
     },
