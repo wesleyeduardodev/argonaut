@@ -178,24 +178,29 @@ export const ARGOCD_TOOLS: ToolDefinition[] = [
   {
     name: "batch_sync",
     description:
-      "Sync multiple applications in controlled batches. Filters apps by glob pattern, syncs N at a time, waits for all in a batch to become Healthy before moving to the next. Stops everything if a batch fails after retries. This is a long-running operation.",
+      "Sync multiple applications in controlled batches. Supports two modes: (1) glob pattern to match app names, or (2) explicit comma-separated app list for precise ordering. Syncs N at a time, waits for all in a batch to become Healthy before moving to the next. Stops everything if a batch fails after retries. This is a long-running operation.",
     parameters: {
       type: "object",
       properties: {
         pattern: {
           type: "string",
           description:
-            "Glob pattern to match application names (e.g. 'my-app-*', '*-production', 'frontend-*')",
+            "Glob pattern to match application names (e.g. 'my-app-*', '*-production'). Use this OR 'apps', not both.",
+        },
+        apps: {
+          type: "string",
+          description:
+            "Comma-separated list of exact application names in the desired order (e.g. 'app-wesley,app-joao,app-maria'). Use this for precise control over which apps and in what order. Use this OR 'pattern', not both.",
         },
         batch_size: {
           type: "string",
           description:
-            "Number of apps to sync per batch (default: 3)",
+            "Number of apps to sync per batch (default: 3). Use 1 for strict sequential one-by-one deploys.",
         },
-        max_retries: {
+        max_attempts: {
           type: "string",
           description:
-            "Max retry attempts per batch before aborting (default: 2). Total attempts = max_retries + 1",
+            "Max total attempts per batch before aborting (default: 3). If the user says 'try 5 times', use 5.",
         },
         health_timeout_seconds: {
           type: "string",
@@ -203,7 +208,7 @@ export const ARGOCD_TOOLS: ToolDefinition[] = [
             "Seconds to wait for each batch to become healthy per attempt (default: 300)",
         },
       },
-      required: ["pattern"],
+      required: [],
     },
   },
 ];

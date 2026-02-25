@@ -415,35 +415,63 @@ export class ArgoClient {
   // ─── Batch Sync ───
 
   async batchSync(
-    pattern: string,
+    pattern: string | undefined,
     batchSize = 3,
     maxRetries = 2,
     healthTimeoutSeconds = 300,
-    onProgress?: OnBatchProgress
+    onProgress?: OnBatchProgress,
+    apps?: string[]
   ): Promise<unknown> {
     const POLL_INTERVAL = 10_000; // 10s
 
-    // 1. Resolve apps matching pattern
-    const allApps = (await this.listApplications()) as Array<{
-      name: string;
-      syncStatus: string;
-      healthStatus: string;
-    }>;
+    let appNames: string[];
 
-    const regex = globToRegex(pattern);
-    const matched = allApps
-      .filter((a) => regex.test(a.name))
-      .sort((a, b) => a.name.localeCompare(b.name));
+    if (apps && apps.length > 0) {
+      // Explicit app list — validate they exist
+      const allApps = (await this.listApplications()) as Array<{
+        name: string;
+        syncStatus: string;
+        healthStatus: string;
+      }>;
+      const allNames = new Set(allApps.map((a) => a.name));
+      const notFound = apps.filter((a) => !allNames.has(a));
+      if (notFound.length > 0) {
+        return {
+          success: false,
+          error: `Applications not found: ${notFound.join(", ")}`,
+          matchedApps: [],
+        };
+      }
+      // Preserve the order the user specified
+      appNames = apps;
+    } else if (pattern) {
+      // Glob pattern match
+      const allApps = (await this.listApplications()) as Array<{
+        name: string;
+        syncStatus: string;
+        healthStatus: string;
+      }>;
+      const regex = globToRegex(pattern);
+      const matched = allApps
+        .filter((a) => regex.test(a.name))
+        .sort((a, b) => a.name.localeCompare(b.name));
 
-    if (matched.length === 0) {
+      if (matched.length === 0) {
+        return {
+          success: false,
+          error: `No applications matching pattern "${pattern}"`,
+          matchedApps: [],
+        };
+      }
+      appNames = matched.map((a) => a.name);
+    } else {
       return {
         success: false,
-        error: `No applications matching pattern "${pattern}"`,
+        error: "Either 'pattern' or 'apps' must be provided",
         matchedApps: [],
       };
     }
 
-    const appNames = matched.map((a) => a.name);
     const totalApps = appNames.length;
 
     // 2. Split into batches

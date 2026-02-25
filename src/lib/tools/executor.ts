@@ -77,15 +77,22 @@ export async function executeTool(
       case "list_repositories":
         result = await client.listRepositories();
         break;
-      case "batch_sync":
+      case "batch_sync": {
+        const appsList = args.apps
+          ? (args.apps as string).split(",").map((s) => s.trim()).filter(Boolean)
+          : undefined;
+        const maxAttempts = args.max_attempts ? Number(args.max_attempts) : undefined;
+        const maxRetries = maxAttempts !== undefined ? Math.max(0, maxAttempts - 1) : undefined;
         result = await client.batchSync(
-          args.pattern as string,
+          args.pattern as string | undefined,
           args.batch_size ? Number(args.batch_size) : undefined,
-          args.max_retries ? Number(args.max_retries) : undefined,
+          maxRetries,
           args.health_timeout_seconds ? Number(args.health_timeout_seconds) : undefined,
-          onProgress
+          onProgress,
+          appsList
         );
         break;
+      }
       default:
         return JSON.stringify({ error: `Unknown tool: ${toolName}` });
     }
