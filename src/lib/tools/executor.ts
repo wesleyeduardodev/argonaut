@@ -62,7 +62,9 @@ export async function executeTool(
         result = await client.restartApplication(
           args.name as string,
           args.resource_name as string | undefined,
-          args.resource_kind as string | undefined
+          args.resource_kind as string | undefined,
+          args.wait_healthy === "true",
+          args.health_timeout_seconds ? Number(args.health_timeout_seconds) : undefined
         );
         break;
       case "list_projects":

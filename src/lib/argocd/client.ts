@@ -267,7 +267,9 @@ export class ArgoClient {
   async restartApplication(
     name: string,
     resourceName?: string,
-    resourceKind?: string
+    resourceKind?: string,
+    waitHealthy?: boolean,
+    healthTimeoutSeconds = 300
   ): Promise<unknown> {
     const app = (await this.getApplication(name)) as {
       metadata: { name: string };
@@ -354,6 +356,36 @@ export class ArgoClient {
         namespace: ns,
         status: "restarted",
       });
+    }
+
+    // If wait_healthy, poll until app is Healthy
+    if (waitHealthy) {
+      const POLL_INTERVAL = 10_000;
+      const deadline = Date.now() + healthTimeoutSeconds * 1000;
+      let healthy = false;
+
+      while (Date.now() < deadline) {
+        await new Promise((r) => setTimeout(r, POLL_INTERVAL));
+        try {
+          const appStatus = (await this.getApplication(name)) as {
+            status: { health: { status: string } };
+          };
+          if (appStatus.status?.health?.status === "Healthy") {
+            healthy = true;
+            break;
+          }
+        } catch {
+          // keep polling
+        }
+      }
+
+      return {
+        restarted: results,
+        healthy,
+        message: healthy
+          ? `Application "${name}" restarted and healthy`
+          : `Application "${name}" restarted but not healthy after ${healthTimeoutSeconds}s`,
+      };
     }
 
     return { restarted: results };

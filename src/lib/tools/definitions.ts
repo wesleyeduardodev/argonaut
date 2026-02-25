@@ -126,13 +126,15 @@ export const ARGOCD_TOOLS: ToolDefinition[] = [
   },
   {
     name: "restart_application",
-    description: "Rolling restart of Deployments/StatefulSets in an application. Targets specific resources when resource_name or resource_kind is provided; restarts all if omitted.",
+    description: "Rolling restart of Deployments/StatefulSets in an application. Targets specific resources when resource_name or resource_kind is provided; restarts all if omitted. Use wait_healthy=true when you need to confirm the app is healthy before proceeding (e.g. sequential restarts).",
     parameters: {
       type: "object",
       properties: {
         name: { type: "string", description: "The application name" },
         resource_name: { type: "string", description: "Specific resource name to restart (e.g. 'backend', 'frontend'). Supports partial match. If omitted, restarts all." },
         resource_kind: { type: "string", description: "Filter by resource kind", enum: ["Deployment", "StatefulSet"] },
+        wait_healthy: { type: "string", description: "If 'true', poll until the app is Healthy before returning. Use this for sequential operations where you need to wait. Default: false." },
+        health_timeout_seconds: { type: "string", description: "Max seconds to wait for healthy when wait_healthy is true (default: 300)" },
       },
       required: ["name"],
     },
