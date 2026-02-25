@@ -3,32 +3,35 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
 model User {
-  id          Int          @id @default(autoincrement())
-  username    String       @unique
-  password    String
-  createdAt   DateTime     @default(now())
+  id           Int           @id @default(autoincrement())
+  username     String        @unique
+  password     String
+  createdAt    DateTime      @default(now()) @map("created_at")
   providers    AIProvider[]
   argoServers  ArgoServer[]
   chatSessions ChatSession[]
+
+  @@map("users")
 }
 
 model AIProvider {
   id           Int      @id @default(autoincrement())
   name         String
   provider     String
-  apiKey       String
-  defaultModel String
-  isDefault    Boolean  @default(false)
-  createdAt    DateTime @default(now())
-  userId       Int      @default(1)
+  apiKey       String   @map("api_key")
+  defaultModel String   @map("default_model")
+  isDefault    Boolean  @default(false) @map("is_default")
+  createdAt    DateTime @default(now()) @map("created_at")
+  userId       Int      @default(1) @map("user_id")
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, provider])
+  @@map("ai_providers")
 }
 
 model ChatSession {
@@ -36,38 +39,42 @@ model ChatSession {
   title     String        @default("Nova conversa")
   provider  String?
   model     String?
-  createdAt DateTime      @default(now())
-  updatedAt DateTime      @updatedAt
-  userId    Int
+  createdAt DateTime      @default(now()) @map("created_at")
+  updatedAt DateTime      @updatedAt @map("updated_at")
+  userId    Int           @map("user_id")
   user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   messages  ChatMessage[]
 
   @@index([userId, updatedAt])
+  @@map("chat_sessions")
 }
 
 model ChatMessage {
   id        Int         @id @default(autoincrement())
   role      String
   content   String
-  toolCalls String?
-  createdAt DateTime    @default(now())
-  sessionId Int
+  toolCalls String?     @map("tool_calls")
+  createdAt DateTime    @default(now()) @map("created_at")
+  sessionId Int         @map("session_id")
   session   ChatSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
 
   @@index([sessionId])
+  @@map("chat_messages")
 }
 
 model ArgoServer {
   id        Int      @id @default(autoincrement())
   name      String
   url       String
-  authType  String
+  authType  String   @map("auth_type")
   token     String?
   username  String?
   password  String?
   insecure  Boolean  @default(false)
-  isDefault Boolean  @default(false)
-  createdAt DateTime @default(now())
-  userId    Int      @default(1)
+  isDefault Boolean  @default(false) @map("is_default")
+  createdAt DateTime @default(now()) @map("created_at")
+  userId    Int      @default(1) @map("user_id")
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("argo_servers")
 }

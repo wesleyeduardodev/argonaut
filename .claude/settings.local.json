@@ -27,7 +27,9 @@
       "Bash(cd \"C:/Users/wesle/OneDrive/Documentos/projetos-git/mcp-argo\" && npm run build 2>&1)",
       "Bash(cd \"C:/Users/wesle/OneDrive/Documentos/projetos-git/mcp-argo\" && rm -f prisma/dev.db prisma/dev.db-journal && npx prisma migrate dev 2>&1)",
       "Bash(cd /c/Users/wesle/OneDrive/Documentos/projetos-git/mcp-argo && npx prisma migrate dev --name add_chat_history 2>&1)",
-      "Bash(cd /c/Users/wesle/OneDrive/Documentos/projetos-git/mcp-argo && npx prisma generate 2>&1)"
+      "Bash(cd /c/Users/wesle/OneDrive/Documentos/projetos-git/mcp-argo && npx prisma generate 2>&1)",
+      "Bash(cd /c/Users/wesle/OneDrive/Documentos/projetos-git/mcp-argo && docker compose up -d 2>&1)",
+      "Bash(echo Docker not in PATH:*)"
     ]
   }
 }
