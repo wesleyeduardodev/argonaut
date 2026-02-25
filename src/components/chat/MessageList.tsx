@@ -5,9 +5,9 @@ import type { ChatMessage } from "@/types";
 import MessageBubble from "./MessageBubble";
 
 const EMPTY_ACTIONS = [
-  { label: "⟳ Listar apps", prompt: "Liste todas as aplicações ArgoCD com status de sync e health" },
-  { label: "📊 Health check", prompt: "Faça um health check de todas as aplicações e me diga quais estão com problemas" },
-  { label: "🔄 Sync app", prompt: "Qual aplicação você gostaria de sincronizar?" },
+  { label: "⟳ Listar aplicações", prompt: "Liste todas as aplicações ArgoCD com status de sync e health" },
+  { label: "📊 Verificar saúde", prompt: "Faça um health check de todas as aplicações e me diga quais estão com problemas" },
+  { label: "🔄 Sincronizar app", prompt: "Qual aplicação você gostaria de sincronizar?" },
   { label: "📋 Ver logs", prompt: "De qual aplicação você gostaria de ver os logs?" },
 ];
 
@@ -29,8 +29,8 @@ export default function MessageList({ messages, onQuickAction }: MessageListProp
         <div className="text-center space-y-6">
           <div className="text-6xl animate-glow-pulse text-primary select-none">⎈</div>
           <div>
-            <h2 className="font-display text-2xl font-semibold text-text">Argonaut</h2>
-            <p className="text-text-muted text-sm mt-1">Mission control para ArgoCD</p>
+            <h2 className="font-display text-2xl font-semibold text-text">Argonaut <span className="text-primary">AI</span></h2>
+            <p className="text-text-muted text-sm mt-1">Controle inteligente para ArgoCD</p>
           </div>
           <div className="grid grid-cols-2 gap-2 max-w-sm mx-auto">
             {EMPTY_ACTIONS.map((action) => (

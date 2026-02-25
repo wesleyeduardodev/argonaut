@@ -38,7 +38,7 @@ export default function ProviderList() {
   }, [fetchProviders]);
 
   async function handleDelete(id: number) {
-    if (!confirm("Deletar este provider?")) return;
+    if (!confirm("Deletar este provedor?")) return;
     await fetch(`/api/providers?id=${id}`, { method: "DELETE" });
     fetchProviders();
   }
@@ -53,7 +53,7 @@ export default function ProviderList() {
     return (
       <div className="flex flex-col items-center gap-3 py-16">
         <span className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-        <span className="text-sm text-text-muted">Carregando providers...</span>
+        <span className="text-sm text-text-muted">Carregando provedores...</span>
       </div>
     );
   }
@@ -69,7 +69,7 @@ export default function ProviderList() {
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
             <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
           </svg>
-          Adicionar Provider
+          Adicionar Provedor
         </button>
       )}
 
@@ -85,10 +85,10 @@ export default function ProviderList() {
             </div>
             <div>
               <h3 className="font-display text-lg font-semibold text-text">
-                {editing ? "Editar Provider" : "Novo Provider"}
+                {editing ? "Editar Provedor" : "Novo Provedor"}
               </h3>
               <p className="text-xs text-text-muted">
-                {editing ? "Atualize as configurações do provider" : "Configure um novo provedor de IA"}
+                {editing ? "Atualize as configurações do provedor" : "Configure um novo provedor de IA"}
               </p>
             </div>
           </div>
@@ -107,7 +107,7 @@ export default function ProviderList() {
       {providers.length === 0 && !showForm ? (
         <div className="text-center py-16 border border-dashed border-border rounded-2xl">
           <div className="text-5xl mb-4 opacity-50">🤖</div>
-          <p className="text-text font-medium">Nenhum provider configurado</p>
+          <p className="text-text font-medium">Nenhum provedor configurado</p>
           <p className="text-text-muted text-sm mt-1 max-w-xs mx-auto">
             Adicione um provedor de IA como Claude, OpenAI ou Gemini para começar
           </p>
@@ -137,7 +137,7 @@ export default function ProviderList() {
                         {p.isDefault && (
                           <span className="inline-flex items-center gap-1 text-[10px] uppercase tracking-wider bg-primary/10 text-primary px-2 py-0.5 rounded-full font-semibold border border-primary/20">
                             <span className="w-1.5 h-1.5 rounded-full bg-primary" />
-                            default
+                            padrão
                           </span>
                         )}
                       </div>

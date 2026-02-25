@@ -44,10 +44,10 @@ export default function MessageDebugLog({ logs }: { logs: DebugLogEntry[] }) {
     <div className="mt-2 bg-bg/80 border border-border rounded-lg p-3 space-y-0.5">
       <div className="flex items-center gap-3 mb-2 text-[10px] text-text-muted">
         <span className="flex items-center gap-1">
-          <span className="text-primary font-bold">→</span> Enviado ao server
+          <span className="text-primary font-bold">→</span> Enviado ao servidor
         </span>
         <span className="flex items-center gap-1">
-          <span className="text-success font-bold">←</span> Recebido do server
+          <span className="text-success font-bold">←</span> Recebido do servidor
         </span>
       </div>
       {logs.map((entry, i) => (

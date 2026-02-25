@@ -112,7 +112,7 @@ export default function ToolCallDisplay({ toolCall }: { toolCall: ToolCallResult
         <div className="border-t border-border px-3 py-2 space-y-2">
           <div>
             <span className="text-xs text-text-muted uppercase font-code">
-              Tool: {toolCall.name}
+              Ferramenta: {toolCall.name}
             </span>
             <pre className="text-xs text-text mt-1 overflow-x-auto whitespace-pre-wrap font-code">
               {JSON.stringify(toolCall.input, null, 2)}
@@ -120,7 +120,7 @@ export default function ToolCallDisplay({ toolCall }: { toolCall: ToolCallResult
           </div>
           {toolCall.output && (
             <div>
-              <span className="text-xs text-text-muted uppercase font-code">Output</span>
+              <span className="text-xs text-text-muted uppercase font-code">Resultado</span>
               <pre className="text-xs text-text mt-1 overflow-x-auto whitespace-pre-wrap max-h-64 overflow-y-auto font-code">
                 {toolCall.output}
               </pre>

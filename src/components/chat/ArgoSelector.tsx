@@ -42,7 +42,7 @@ export default function ArgoSelector({ onSelect }: ArgoSelectorProps) {
   if (servers.length === 0) {
     return (
       <span className="text-sm text-warning">
-        No ArgoCD servers configured
+        Nenhum servidor ArgoCD configurado
       </span>
     );
   }

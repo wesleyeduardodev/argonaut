@@ -60,7 +60,7 @@ export default function ProviderSelector({ onSelect }: ProviderSelectorProps) {
   if (providers.length === 0) {
     return (
       <span className="text-sm text-warning">
-        No AI providers configured
+        Nenhum provedor de IA configurado
       </span>
     );
   }

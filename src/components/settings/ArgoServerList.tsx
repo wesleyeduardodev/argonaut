@@ -127,12 +127,12 @@ export default function ArgoServerList() {
                       {s.isDefault && (
                         <span className="inline-flex items-center gap-1 text-[10px] uppercase tracking-wider bg-primary/10 text-primary px-2 py-0.5 rounded-full font-semibold border border-primary/20">
                           <span className="w-1.5 h-1.5 rounded-full bg-primary" />
-                          default
+                          padrão
                         </span>
                       )}
                       {s.insecure && (
                         <span className="inline-flex items-center gap-1 text-[10px] uppercase tracking-wider bg-warning/10 text-warning px-2 py-0.5 rounded-full font-semibold border border-warning/20">
-                          insecure
+                          inseguro
                         </span>
                       )}
                     </div>

@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Argonaut — ArgoCD Mission Control",
-  description: "AI-powered chat interface for ArgoCD management",
+  title: "Argonaut AI — Controle de ArgoCD",
+  description: "Interface de chat com IA para gerenciamento de ArgoCD",
   icons: {
     icon: "/icon.svg",
   },

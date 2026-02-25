@@ -17,7 +17,7 @@ export default function ArgoServersPage() {
             </svg>
           </Link>
           <div>
-            <h1 className="font-display text-2xl font-bold text-text tracking-tight">ArgoCD Servers</h1>
+            <h1 className="font-display text-2xl font-bold text-text tracking-tight">Servidores ArgoCD</h1>
             <p className="text-sm text-text-muted mt-0.5">Gerencie conexões com servidores ArgoCD</p>
           </div>
         </div>
@@ -29,7 +29,7 @@ export default function ArgoServersPage() {
             <path d="M12 2a4 4 0 0 0-4 4c0 2 2 3 2 6H8a2 2 0 0 0-2 2v2h12v-2a2 2 0 0 0-2-2h-2c0-3 2-4 2-6a4 4 0 0 0-4-4z" />
             <path d="M9 18v1a3 3 0 0 0 6 0v-1" />
           </svg>
-          AI Providers
+          Provedores de IA
         </Link>
       </div>
 

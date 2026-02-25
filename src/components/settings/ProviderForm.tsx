@@ -116,7 +116,7 @@ export default function ProviderForm({ initial, onSave, onCancel }: ProviderForm
 
       {/* Provider type selector as cards */}
       <div>
-        <label className="block text-xs font-medium text-text-muted uppercase tracking-wider mb-3">Provider</label>
+        <label className="block text-xs font-medium text-text-muted uppercase tracking-wider mb-3">Provedor</label>
         <div className="grid grid-cols-3 gap-2">
           {PROVIDER_CONFIGS.map((p) => {
             const m = PROVIDER_META[p.id] || { icon: "⚙️", color: "from-cyan-500/20 to-cyan-600/5" };
@@ -215,7 +215,7 @@ export default function ProviderForm({ initial, onSave, onCancel }: ProviderForm
 
       {/* Toggle */}
       <div className="pt-1">
-        <Toggle checked={isDefault} onChange={setIsDefault} label="Definir como provider padrão" />
+        <Toggle checked={isDefault} onChange={setIsDefault} label="Definir como provedor padrão" />
       </div>
 
       {/* Actions */}

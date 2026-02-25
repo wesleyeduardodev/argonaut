@@ -10,9 +10,9 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 const QUICK_ACTIONS = [
-  { label: "⟳ Listar apps", prompt: "Liste todas as aplicações ArgoCD com status de sync e health" },
-  { label: "📊 Health check", prompt: "Faça um health check de todas as aplicações e me diga quais estão com problemas" },
-  { label: "🔄 Sync app", prompt: "Qual aplicação você gostaria de sincronizar?" },
+  { label: "⟳ Listar aplicações", prompt: "Liste todas as aplicações ArgoCD com status de sync e health" },
+  { label: "📊 Verificar saúde", prompt: "Faça um health check de todas as aplicações e me diga quais estão com problemas" },
+  { label: "🔄 Sincronizar app", prompt: "Qual aplicação você gostaria de sincronizar?" },
   { label: "📋 Ver logs", prompt: "De qual aplicação você gostaria de ver os logs?" },
 ];
 
@@ -202,7 +202,7 @@ export default function ChatInterface() {
         },
       ]);
     } catch (error) {
-      const raw = error instanceof Error ? error.message : "Network error";
+      const raw = error instanceof Error ? error.message : "Erro de rede";
       log("received", "Fetch error", { message: raw });
 
       setMessages([
@@ -220,7 +220,7 @@ export default function ChatInterface() {
         <div className="max-w-3xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-4">
             <h1 className="font-display text-primary font-semibold text-lg tracking-tight">
-              ⎈ Argonaut
+              ⎈ Argonaut <span className="text-primary">AI</span>
             </h1>
             <ProviderSelector onSelect={handleProviderSelect} />
             <ArgoSelector onSelect={handleArgoSelect} />

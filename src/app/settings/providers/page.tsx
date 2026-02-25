@@ -17,7 +17,7 @@ export default function ProvidersPage() {
             </svg>
           </Link>
           <div>
-            <h1 className="font-display text-2xl font-bold text-text tracking-tight">AI Providers</h1>
+            <h1 className="font-display text-2xl font-bold text-text tracking-tight">Provedores de IA</h1>
             <p className="text-sm text-text-muted mt-0.5">Configure os provedores de inteligência artificial</p>
           </div>
         </div>
@@ -29,7 +29,7 @@ export default function ProvidersPage() {
             <circle cx="12" cy="12" r="10" />
             <path d="M12 6v6l4 2" />
           </svg>
-          ArgoCD Servers
+          Servidores ArgoCD
         </Link>
       </div>
 
