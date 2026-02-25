@@ -1,1 +1,0 @@
-- Criar um fluxo que faz gerenciamento de branchs, tipo criar um pull request de uma branch, subir em algum ambiente e tals...ai nesse caso so gerar um token de acesso...clear

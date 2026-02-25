@@ -4,10 +4,11 @@ import { useState, useRef, useEffect } from "react";
 
 interface ChatInputProps {
   onSend: (message: string) => void;
+  onStop?: () => void;
   disabled: boolean;
 }
 
-export default function ChatInput({ onSend, disabled }: ChatInputProps) {
+export default function ChatInput({ onSend, onStop, disabled }: ChatInputProps) {
   const [input, setInput] = useState("");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -64,29 +65,55 @@ export default function ChatInput({ onSend, disabled }: ChatInputProps) {
             rows={1}
             className="flex-1 bg-transparent text-text placeholder-text-muted resize-none focus:outline-none disabled:opacity-50 py-1 text-sm leading-relaxed"
           />
-          <button
-            type="submit"
-            disabled={disabled || !hasText}
-            className="flex-shrink-0 p-2 rounded-full transition-colors disabled:opacity-30"
-          >
-            <svg
-              width="20"
-              height="20"
-              viewBox="0 0 24 24"
-              fill="none"
-              className={`transition-colors ${
-                hasText ? "text-primary" : "text-text-muted"
-              }`}
+          {disabled && onStop ? (
+            <button
+              type="button"
+              onClick={onStop}
+              className="flex-shrink-0 p-2 rounded-full transition-colors hover:bg-danger/10"
+              title="Parar geração"
             >
-              <path
-                d="M5 12h14M12 5l7 7-7 7"
-                stroke="currentColor"
-                strokeWidth={2}
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
-          </button>
+              <svg
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                className="text-danger"
+              >
+                <rect
+                  x="6"
+                  y="6"
+                  width="12"
+                  height="12"
+                  rx="2"
+                  fill="currentColor"
+                />
+              </svg>
+            </button>
+          ) : (
+            <button
+              type="submit"
+              disabled={disabled || !hasText}
+              className="flex-shrink-0 p-2 rounded-full transition-colors disabled:opacity-30"
+            >
+              <svg
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                className={`transition-colors ${
+                  hasText ? "text-primary" : "text-text-muted"
+                }`}
+              >
+                <path
+                  d="M5 12h14M12 5l7 7-7 7"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            </button>
+          )}
         </div>
       </div>
     </form>

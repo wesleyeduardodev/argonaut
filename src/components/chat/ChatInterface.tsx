@@ -63,6 +63,7 @@ export default function ChatInterface({
   const argoRef = useRef<number | null>(null);
   const sessionRef = useRef<number | null>(sessionId);
   const titleUpdatedRef = useRef(false);
+  const abortRef = useRef<AbortController | null>(null);
 
   // Load messages when sessionId is provided
   useEffect(() => {
@@ -140,6 +141,11 @@ export default function ChatInterface({
     return session.id;
   }
 
+  function handleStop() {
+    abortRef.current?.abort();
+    abortRef.current = null;
+  }
+
   async function handleSend(content: string) {
     if (!providerRef.current || !argoRef.current) return;
 
@@ -171,11 +177,15 @@ export default function ChatInterface({
       { role: "assistant", content: "", status: "thinking" },
     ]);
 
+    const abortController = new AbortController();
+    abortRef.current = abortController;
+
     try {
       const response = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(requestBody),
+        signal: abortController.signal,
       });
 
       log("received", `HTTP ${response.status}`, { status: response.status });
@@ -309,14 +319,27 @@ export default function ChatInterface({
           .catch(() => {});
       }
     } catch (error) {
-      const raw = error instanceof Error ? error.message : "Erro de rede";
-      log("received", "Fetch error", { message: raw });
+      if (error instanceof DOMException && error.name === "AbortError") {
+        // User cancelled — keep whatever was collected so far
+        log("received", "Aborted by user", {});
+        setMessages((prev) => {
+          const last = prev[prev.length - 1];
+          if (last?.role === "assistant") {
+            return [...prev.slice(0, -1), { ...last, status: "done" as const }];
+          }
+          return prev;
+        });
+      } else {
+        const raw = error instanceof Error ? error.message : "Erro de rede";
+        log("received", "Fetch error", { message: raw });
 
-      setMessages([
-        ...newMessages,
-        { role: "assistant", content: friendlyError(raw), isError: true, status: "error", debugLogs: logs },
-      ]);
+        setMessages([
+          ...newMessages,
+          { role: "assistant", content: friendlyError(raw), isError: true, status: "error", debugLogs: logs },
+        ]);
+      }
     } finally {
+      abortRef.current = null;
       setIsLoading(false);
     }
   }
@@ -388,7 +411,7 @@ export default function ChatInterface({
           </div>
         )}
 
-        <ChatInput onSend={handleSend} disabled={isLoading} />
+        <ChatInput onSend={handleSend} onStop={handleStop} disabled={isLoading} />
       </div>
     </div>
   );
