@@ -1,0 +1,22 @@
+{
+  "permissions": {
+    "allow": [
+      "WebSearch",
+      "WebFetch(domain:argo-cd.readthedocs.io)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:www.postman.com)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "WebFetch(domain:dev.to)",
+      "WebFetch(domain:www.freecodecamp.org)",
+      "WebFetch(domain:developers.openai.com)",
+      "WebFetch(domain:ai.google.dev)",
+      "WebFetch(domain:docs.anthropic.com)",
+      "Bash(tail:*)",
+      "Bash(cd /c/Users/wesle/OneDrive/Documentos/projetos-git/mcp-argo && npx prisma migrate dev --name init 2>&1)",
+      "Bash(cd /c/Users/wesle/OneDrive/Documentos/projetos-git/mcp-argo && npx tsx prisma/seed.ts 2>&1)",
+      "Bash(cd /c/Users/wesle/OneDrive/Documentos/projetos-git/mcp-argo && npx next build 2>&1)",
+      "Bash(cd:*)",
+      "Bash(head:*)"
+    ]
+  }
+}
