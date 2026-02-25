@@ -16,6 +16,30 @@ interface ProviderFormProps {
   onCancel: () => void;
 }
 
+const PROVIDER_META: Record<string, { icon: string; color: string }> = {
+  claude: { icon: "🟣", color: "from-purple-500/20 to-purple-600/5" },
+  openai: { icon: "🟢", color: "from-emerald-500/20 to-emerald-600/5" },
+  gemini: { icon: "🔵", color: "from-blue-500/20 to-blue-600/5" },
+};
+
+function Toggle({ checked, onChange, label }: { checked: boolean; onChange: (v: boolean) => void; label: string }) {
+  return (
+    <label className="flex items-center gap-3 cursor-pointer group">
+      <button
+        type="button"
+        role="switch"
+        aria-checked={checked}
+        onClick={() => onChange(!checked)}
+        className="toggle-track"
+        data-checked={checked}
+      >
+        <span className="toggle-thumb" />
+      </button>
+      <span className="text-sm text-text-muted group-hover:text-text transition-colors">{label}</span>
+    </label>
+  );
+}
+
 export default function ProviderForm({ initial, onSave, onCancel }: ProviderFormProps) {
   const [name, setName] = useState(initial?.name || "");
   const [provider, setProvider] = useState(initial?.provider || "claude");
@@ -28,6 +52,7 @@ export default function ProviderForm({ initial, onSave, onCancel }: ProviderForm
   const [loading, setLoading] = useState(false);
 
   const models = getModelsForProvider(provider);
+  const meta = PROVIDER_META[provider] || { icon: "⚙️", color: "from-cyan-500/20 to-cyan-600/5" };
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -45,7 +70,7 @@ export default function ProviderForm({ initial, onSave, onCancel }: ProviderForm
       if (initial) body.id = initial.id;
       if (apiKey) body.apiKey = apiKey;
       else if (!initial) {
-        setError("API Key is required");
+        setError("API Key é obrigatória");
         setLoading(false);
         return;
       }
@@ -58,13 +83,13 @@ export default function ProviderForm({ initial, onSave, onCancel }: ProviderForm
 
       if (!res.ok) {
         const data = await res.json();
-        setError(data.error || "Failed to save");
+        setError(data.error || "Falha ao salvar");
         return;
       }
 
       onSave();
     } catch {
-      setError("Network error");
+      setError("Erro de rede");
     } finally {
       setLoading(false);
     }
@@ -79,92 +104,149 @@ export default function ProviderForm({ initial, onSave, onCancel }: ProviderForm
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form onSubmit={handleSubmit} className="space-y-6">
       {error && (
-        <div className="bg-red-500/10 border border-red-500/30 text-red-400 px-4 py-2 rounded-lg text-sm">
+        <div className="flex items-center gap-2 bg-danger/10 border border-danger/20 text-danger px-4 py-3 rounded-xl text-sm">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="flex-shrink-0">
+            <circle cx="12" cy="12" r="10" /><path d="M12 8v4M12 16h.01" />
+          </svg>
           {error}
         </div>
       )}
 
+      {/* Provider type selector as cards */}
       <div>
-        <label className="block text-sm font-medium text-gray-300 mb-1">Name</label>
-        <input
-          type="text"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          required
-          placeholder="My Claude Provider"
-          className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
-        />
+        <label className="block text-xs font-medium text-text-muted uppercase tracking-wider mb-3">Provider</label>
+        <div className="grid grid-cols-3 gap-2">
+          {PROVIDER_CONFIGS.map((p) => {
+            const m = PROVIDER_META[p.id] || { icon: "⚙️", color: "from-cyan-500/20 to-cyan-600/5" };
+            const selected = provider === p.id;
+            return (
+              <button
+                key={p.id}
+                type="button"
+                onClick={() => handleProviderChange(p.id)}
+                className={`relative flex flex-col items-center gap-1.5 p-4 rounded-xl border transition-all ${
+                  selected
+                    ? "border-primary bg-gradient-to-b " + m.color + " shadow-[0_0_20px_rgba(6,182,212,0.1)]"
+                    : "border-border bg-bg hover:border-border-focus hover:bg-surface-hover"
+                }`}
+              >
+                <span className="text-2xl">{m.icon}</span>
+                <span className={`text-sm font-medium ${selected ? "text-text" : "text-text-muted"}`}>
+                  {p.label.split(" ")[0]}
+                </span>
+                {selected && (
+                  <div className="absolute top-2 right-2">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" className="text-primary">
+                      <circle cx="12" cy="12" r="10" fill="currentColor" opacity="0.2" />
+                      <path d="M8 12l3 3 5-5" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  </div>
+                )}
+              </button>
+            );
+          })}
+        </div>
       </div>
 
+      {/* Name */}
       <div>
-        <label className="block text-sm font-medium text-gray-300 mb-1">Provider</label>
-        <select
-          value={provider}
-          onChange={(e) => handleProviderChange(e.target.value)}
-          className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
-        >
-          {PROVIDER_CONFIGS.map((p) => (
-            <option key={p.id} value={p.id}>
-              {p.label}
-            </option>
-          ))}
-        </select>
+        <label className="block text-xs font-medium text-text-muted uppercase tracking-wider mb-2">Nome</label>
+        <div className="relative">
+          <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-text-muted pointer-events-none">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
+              <path d="M15.5 3h-7A2.5 2.5 0 0 0 6 5.5v13A2.5 2.5 0 0 0 8.5 21h7a2.5 2.5 0 0 0 2.5-2.5v-13A2.5 2.5 0 0 0 15.5 3z" />
+              <path d="M10 15h4M12 7v4" />
+            </svg>
+          </div>
+          <input
+            type="text"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            required
+            placeholder="Ex: Meu Claude"
+            className="field-input field-with-icon"
+          />
+        </div>
       </div>
 
+      {/* API Key */}
       <div>
-        <label className="block text-sm font-medium text-gray-300 mb-1">
-          API Key {initial && <span className="text-gray-500">(leave blank to keep current)</span>}
+        <label className="block text-xs font-medium text-text-muted uppercase tracking-wider mb-2">
+          API Key {initial && <span className="normal-case tracking-normal text-text-muted/60">(vazio = manter atual)</span>}
         </label>
-        <input
-          type="password"
-          value={apiKey}
-          onChange={(e) => setApiKey(e.target.value)}
-          placeholder={initial ? "****" : "sk-..."}
-          className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
-        />
+        <div className="relative">
+          <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-text-muted pointer-events-none">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
+              <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4" />
+            </svg>
+          </div>
+          <input
+            type="password"
+            value={apiKey}
+            onChange={(e) => setApiKey(e.target.value)}
+            placeholder={initial ? "••••••••••••" : "sk-ant-api03-..."}
+            className="field-input field-with-icon font-code"
+          />
+        </div>
       </div>
 
+      {/* Model */}
       <div>
-        <label className="block text-sm font-medium text-gray-300 mb-1">Default Model</label>
-        <select
-          value={defaultModel}
-          onChange={(e) => setDefaultModel(e.target.value)}
-          className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
-        >
-          {models.map((m) => (
-            <option key={m.id} value={m.id}>
-              {m.label}
-            </option>
-          ))}
-        </select>
+        <label className="block text-xs font-medium text-text-muted uppercase tracking-wider mb-2">Modelo Padrão</label>
+        <div className="relative">
+          <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-text-muted pointer-events-none">
+            <span className="text-base">{meta.icon}</span>
+          </div>
+          <select
+            value={defaultModel}
+            onChange={(e) => setDefaultModel(e.target.value)}
+            className="field-input field-select field-with-icon"
+          >
+            {models.map((m) => (
+              <option key={m.id} value={m.id}>
+                {m.label}
+              </option>
+            ))}
+          </select>
+        </div>
       </div>
 
-      <label className="flex items-center gap-2 cursor-pointer">
-        <input
-          type="checkbox"
-          checked={isDefault}
-          onChange={(e) => setIsDefault(e.target.checked)}
-          className="w-4 h-4 rounded border-gray-600 bg-gray-800 text-blue-600 focus:ring-blue-500"
-        />
-        <span className="text-sm text-gray-300">Default provider</span>
-      </label>
+      {/* Toggle */}
+      <div className="pt-1">
+        <Toggle checked={isDefault} onChange={setIsDefault} label="Definir como provider padrão" />
+      </div>
 
-      <div className="flex gap-2 pt-2">
+      {/* Actions */}
+      <div className="flex items-center gap-3 pt-4 border-t border-border">
         <button
           type="submit"
           disabled={loading}
-          className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white rounded-lg transition-colors"
+          className="relative px-5 py-2.5 bg-primary hover:bg-primary-hover disabled:opacity-50 text-bg font-semibold rounded-xl transition-all text-sm shadow-[0_0_20px_rgba(6,182,212,0.15)] hover:shadow-[0_0_25px_rgba(6,182,212,0.25)]"
         >
-          {loading ? "Saving..." : "Save"}
+          {loading ? (
+            <span className="flex items-center gap-2">
+              <span className="w-3.5 h-3.5 border-2 border-bg border-t-transparent rounded-full animate-spin" />
+              Salvando...
+            </span>
+          ) : (
+            <span className="flex items-center gap-2">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
+                <polyline points="17 21 17 13 7 13 7 21" />
+                <polyline points="7 3 7 8 15 8" />
+              </svg>
+              Salvar
+            </span>
+          )}
         </button>
         <button
           type="button"
           onClick={onCancel}
-          className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-gray-300 rounded-lg transition-colors"
+          className="px-5 py-2.5 text-text-muted hover:text-text hover:bg-surface-hover rounded-xl transition-all text-sm"
         >
-          Cancel
+          Cancelar
         </button>
       </div>
     </form>
