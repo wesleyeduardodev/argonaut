@@ -2,8 +2,11 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Argonaut",
+  title: "Argonaut — ArgoCD Mission Control",
   description: "AI-powered chat interface for ArgoCD management",
+  icons: {
+    icon: "/icon.svg",
+  },
 };
 
 export default function RootLayout({
