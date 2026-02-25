@@ -235,7 +235,7 @@ Implementação: array de objetos `{ icon, label, prompt }` que ao clicar chamam
 | 1.7 | Input redesign | Pill shape, ícone send, glow focus | Baixo |
 | 1.8 | Header compacto | Reorganizar dropdowns, status de conexão | Médio |
 
-### Fase 2 — Histórico e Sidebar
+### Fase 2 — Histórico e Sidebar - FEITO
 
 | # | Feature | Descrição | Esforço |
 |---|---------|-----------|---------|
