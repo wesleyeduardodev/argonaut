@@ -19,7 +19,8 @@
       "Bash(head:*)",
       "WebFetch(domain:cd.apps.argoproj.io)",
       "WebFetch(domain:sourcegraph.com)",
-      "Bash(find:*)"
+      "Bash(find:*)",
+      "Bash(cd /c/Users/wesle/OneDrive/Documentos/projetos-git/mcp-argo && npm run build 2>&1)"
     ]
   }
 }

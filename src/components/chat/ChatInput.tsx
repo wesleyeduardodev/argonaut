@@ -21,7 +21,6 @@ export default function ChatInput({ onSend, disabled }: ChatInputProps) {
     if (!trimmed || disabled) return;
     onSend(trimmed);
     setInput("");
-    // Reset textarea height
     if (textareaRef.current) {
       textareaRef.current.style.height = "auto";
     }
@@ -42,31 +41,53 @@ export default function ChatInput({ onSend, disabled }: ChatInputProps) {
     }
   }
 
+  const hasText = input.trim().length > 0;
+
   return (
-    <form onSubmit={handleSubmit} className="border-t border-gray-800 p-4">
-      <div className="flex gap-2 max-w-4xl mx-auto">
-        <textarea
-          ref={textareaRef}
-          value={input}
-          onChange={(e) => {
-            setInput(e.target.value);
-            handleInput();
-          }}
-          onKeyDown={handleKeyDown}
-          disabled={disabled}
-          placeholder={
-            disabled ? "Waiting for response..." : "Type a message... (Enter to send, Shift+Enter for new line)"
-          }
-          rows={1}
-          className="flex-1 px-4 py-2 bg-gray-800 border border-gray-700 rounded-xl text-gray-100 placeholder-gray-500 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50"
-        />
-        <button
-          type="submit"
-          disabled={disabled || !input.trim()}
-          className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-xl transition-colors self-end"
-        >
-          Send
-        </button>
+    <form onSubmit={handleSubmit} className="p-4 pb-6">
+      <div className="max-w-3xl mx-auto">
+        <div className="flex items-end gap-2 rounded-3xl bg-surface border border-border px-4 py-2 input-glow">
+          <textarea
+            ref={textareaRef}
+            value={input}
+            onChange={(e) => {
+              setInput(e.target.value);
+              handleInput();
+            }}
+            onKeyDown={handleKeyDown}
+            disabled={disabled}
+            placeholder={
+              disabled
+                ? "Aguardando resposta..."
+                : "Pergunte sobre suas aplicações..."
+            }
+            rows={1}
+            className="flex-1 bg-transparent text-text placeholder-text-muted resize-none focus:outline-none disabled:opacity-50 py-1 text-sm leading-relaxed"
+          />
+          <button
+            type="submit"
+            disabled={disabled || !hasText}
+            className="flex-shrink-0 p-2 rounded-full transition-colors disabled:opacity-30"
+          >
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              className={`transition-colors ${
+                hasText ? "text-primary" : "text-text-muted"
+              }`}
+            >
+              <path
+                d="M5 12h14M12 5l7 7-7 7"
+                stroke="currentColor"
+                strokeWidth={2}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          </button>
+        </div>
       </div>
     </form>
   );

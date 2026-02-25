@@ -4,11 +4,19 @@ import { useEffect, useRef } from "react";
 import type { ChatMessage } from "@/types";
 import MessageBubble from "./MessageBubble";
 
+const EMPTY_ACTIONS = [
+  { label: "⟳ Listar apps", prompt: "Liste todas as aplicações ArgoCD com status de sync e health" },
+  { label: "📊 Health check", prompt: "Faça um health check de todas as aplicações e me diga quais estão com problemas" },
+  { label: "🔄 Sync app", prompt: "Qual aplicação você gostaria de sincronizar?" },
+  { label: "📋 Ver logs", prompt: "De qual aplicação você gostaria de ver os logs?" },
+];
+
 interface MessageListProps {
   messages: ChatMessage[];
+  onQuickAction: (prompt: string) => void;
 }
 
-export default function MessageList({ messages }: MessageListProps) {
+export default function MessageList({ messages, onQuickAction }: MessageListProps) {
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -17,12 +25,24 @@ export default function MessageList({ messages }: MessageListProps) {
 
   if (messages.length === 0) {
     return (
-      <div className="flex-1 flex items-center justify-center text-gray-500">
-        <div className="text-center">
-          <p className="text-lg">Argonaut</p>
-          <p className="text-sm mt-1">
-            Ask me anything about your ArgoCD applications
-          </p>
+      <div className="flex-1 flex items-center justify-center">
+        <div className="text-center space-y-6">
+          <div className="text-6xl animate-glow-pulse text-primary select-none">⎈</div>
+          <div>
+            <h2 className="font-display text-2xl font-semibold text-text">Argonaut</h2>
+            <p className="text-text-muted text-sm mt-1">Mission control para ArgoCD</p>
+          </div>
+          <div className="grid grid-cols-2 gap-2 max-w-sm mx-auto">
+            {EMPTY_ACTIONS.map((action) => (
+              <button
+                key={action.label}
+                onClick={() => onQuickAction(action.prompt)}
+                className="px-4 py-3 text-sm rounded-xl border border-border bg-surface hover:bg-surface-hover text-text-muted hover:text-text transition-colors text-left"
+              >
+                {action.label}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
     );

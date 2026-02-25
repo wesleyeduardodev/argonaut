@@ -59,7 +59,7 @@ export default function ProviderSelector({ onSelect }: ProviderSelectorProps) {
 
   if (providers.length === 0) {
     return (
-      <span className="text-sm text-yellow-400">
+      <span className="text-sm text-warning">
         No AI providers configured
       </span>
     );
@@ -70,7 +70,7 @@ export default function ProviderSelector({ onSelect }: ProviderSelectorProps) {
       <select
         value={selectedId || ""}
         onChange={(e) => handleProviderChange(Number(e.target.value))}
-        className="px-2 py-1 text-sm bg-gray-800 border border-gray-700 rounded text-gray-200 focus:outline-none focus:ring-1 focus:ring-blue-500"
+        className="px-2 py-1 text-sm bg-surface border border-border rounded-lg text-text focus:outline-none focus:ring-1 focus:ring-primary"
       >
         {providers.map((p) => (
           <option key={p.id} value={p.id}>
@@ -81,7 +81,7 @@ export default function ProviderSelector({ onSelect }: ProviderSelectorProps) {
       <select
         value={selectedModel}
         onChange={(e) => handleModelChange(e.target.value)}
-        className="px-2 py-1 text-sm bg-gray-800 border border-gray-700 rounded text-gray-200 focus:outline-none focus:ring-1 focus:ring-blue-500"
+        className="px-2 py-1 text-sm bg-surface border border-border rounded-lg text-text focus:outline-none focus:ring-1 focus:ring-primary"
       >
         {models.map((m) => (
           <option key={m.id} value={m.id}>

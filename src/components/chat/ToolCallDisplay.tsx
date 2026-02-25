@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import type { ToolCallResult } from "@/types";
 
 const TOOL_LABELS: Record<string, string> = {
@@ -21,68 +21,107 @@ const TOOL_LABELS: Record<string, string> = {
   list_repositories: "Listando repositórios",
 };
 
+const TOOL_ICONS: Record<string, string> = {
+  list_applications: "📋",
+  get_application: "🔍",
+  sync_application: "🔄",
+  rollback_application: "⏪",
+  get_application_logs: "📜",
+  get_resource_tree: "🌳",
+  get_managed_resources: "📦",
+  get_application_events: "📡",
+  terminate_operation: "⛔",
+  delete_application: "🗑️",
+  restart_application: "🔁",
+  list_projects: "📁",
+  get_project: "📂",
+  list_clusters: "🖥️",
+  list_repositories: "📚",
+};
+
 export default function ToolCallDisplay({ toolCall }: { toolCall: ToolCallResult }) {
   const [expanded, setExpanded] = useState(false);
   const isExecuting = !toolCall.output;
   const label = TOOL_LABELS[toolCall.name] || toolCall.name;
+  const icon = TOOL_ICONS[toolCall.name] || "🔧";
+
+  const startTime = useRef(Date.now());
+  const [elapsed, setElapsed] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!isExecuting && !elapsed) {
+      const ms = Date.now() - startTime.current;
+      setElapsed((ms / 1000).toFixed(1) + "s");
+    }
+  }, [isExecuting, elapsed]);
+
+  const borderColor = toolCall.isError
+    ? "border-l-danger"
+    : isExecuting
+    ? "border-l-primary"
+    : "border-l-success";
 
   return (
     <div
-      className={`my-2 border rounded-lg overflow-hidden ${
-        toolCall.isError
-          ? "border-red-500/30 bg-red-500/5"
-          : isExecuting
-          ? "border-blue-500/30 bg-blue-500/5"
-          : "border-gray-700 bg-gray-800/50"
-      }`}
+      className={`my-2 border-l-[3px] ${borderColor} rounded-r-lg overflow-hidden bg-surface/50 border border-border`}
     >
       <button
         onClick={() => setExpanded(!expanded)}
-        className="w-full flex items-center gap-2 px-3 py-2 text-left text-sm hover:bg-gray-700/30 transition-colors"
+        className="w-full flex items-center gap-2 px-3 py-2 text-left text-sm hover:bg-surface-hover transition-colors"
       >
-        <span
-          className={`text-xs transition-transform ${expanded ? "rotate-90" : ""}`}
+        <svg
+          className={`w-3 h-3 text-text-muted transition-transform flex-shrink-0 ${expanded ? "rotate-90" : ""}`}
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
         >
-          ▶
-        </span>
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+        </svg>
+
+        <span className="text-sm">{icon}</span>
 
         {isExecuting ? (
-          <span className="w-3 h-3 border-2 border-blue-400 border-t-transparent rounded-full animate-spin" />
+          <span className="w-3 h-3 border-2 border-primary border-t-transparent rounded-full animate-spin" />
         ) : toolCall.isError ? (
-          <span className="text-red-400 text-xs">✗</span>
+          <span className="text-danger text-xs">✗</span>
         ) : (
-          <span className="text-green-400 text-xs">✓</span>
+          <span className="text-success text-xs">✓</span>
         )}
 
-        <span className="text-gray-300">{label}</span>
+        <span className="text-text">{label}</span>
 
         {typeof toolCall.input?.name === "string" && (
-          <span className="text-gray-500 font-mono text-xs">
+          <span className="text-text-muted font-code text-xs">
             ({toolCall.input.name})
           </span>
         )}
 
-        {isExecuting && (
-          <span className="text-xs text-blue-400 animate-pulse ml-auto">
-            executando...
-          </span>
-        )}
+        <span className="ml-auto flex items-center gap-2">
+          {elapsed && (
+            <span className="text-xs text-text-muted font-code">{elapsed}</span>
+          )}
+          {isExecuting && (
+            <span className="text-xs text-primary animate-pulse">
+              executando...
+            </span>
+          )}
+        </span>
       </button>
 
       {expanded && (
-        <div className="border-t border-gray-700 px-3 py-2 space-y-2">
+        <div className="border-t border-border px-3 py-2 space-y-2">
           <div>
-            <span className="text-xs text-gray-500 uppercase">
+            <span className="text-xs text-text-muted uppercase font-code">
               Tool: {toolCall.name}
             </span>
-            <pre className="text-xs text-gray-300 mt-1 overflow-x-auto whitespace-pre-wrap">
+            <pre className="text-xs text-text mt-1 overflow-x-auto whitespace-pre-wrap font-code">
               {JSON.stringify(toolCall.input, null, 2)}
             </pre>
           </div>
           {toolCall.output && (
             <div>
-              <span className="text-xs text-gray-500 uppercase">Output</span>
-              <pre className="text-xs text-gray-300 mt-1 overflow-x-auto whitespace-pre-wrap max-h-64 overflow-y-auto">
+              <span className="text-xs text-text-muted uppercase font-code">Output</span>
+              <pre className="text-xs text-text mt-1 overflow-x-auto whitespace-pre-wrap max-h-64 overflow-y-auto font-code">
                 {toolCall.output}
               </pre>
             </div>

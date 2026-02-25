@@ -41,23 +41,26 @@ export default function ArgoSelector({ onSelect }: ArgoSelectorProps) {
 
   if (servers.length === 0) {
     return (
-      <span className="text-sm text-yellow-400">
+      <span className="text-sm text-warning">
         No ArgoCD servers configured
       </span>
     );
   }
 
   return (
-    <select
-      value={selectedId || ""}
-      onChange={(e) => handleChange(Number(e.target.value))}
-      className="px-2 py-1 text-sm bg-gray-800 border border-gray-700 rounded text-gray-200 focus:outline-none focus:ring-1 focus:ring-blue-500"
-    >
-      {servers.map((s) => (
-        <option key={s.id} value={s.id}>
-          {s.name}
-        </option>
-      ))}
-    </select>
+    <div className="flex items-center gap-2">
+      <span className="w-2 h-2 rounded-full bg-success flex-shrink-0" />
+      <select
+        value={selectedId || ""}
+        onChange={(e) => handleChange(Number(e.target.value))}
+        className="px-2 py-1 text-sm bg-surface border border-border rounded-lg text-text focus:outline-none focus:ring-1 focus:ring-primary"
+      >
+        {servers.map((s) => (
+          <option key={s.id} value={s.id}>
+            {s.name}
+          </option>
+        ))}
+      </select>
+    </div>
   );
 }
