@@ -108,14 +108,33 @@ export default function ChatInterface({
     role: string,
     content: string,
     toolCalls?: ToolCallResult[]
-  ) {
+  ): Promise<number | null> {
     try {
-      await fetch(`/api/sessions/${sid}/messages`, {
+      const res = await fetch(`/api/sessions/${sid}/messages`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ role, content, toolCalls }),
       });
       onMessageSaved();
+      const data = await res.json();
+      return data.id ?? null;
+    } catch {
+      return null;
+    }
+  }
+
+  async function updateMessage(
+    sid: number,
+    messageId: number,
+    content: string,
+    toolCalls?: ToolCallResult[]
+  ) {
+    try {
+      await fetch(`/api/sessions/${sid}/messages`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ messageId, content, toolCalls }),
+      });
     } catch {
       // fire-and-forget
     }
@@ -180,6 +199,10 @@ export default function ChatInterface({
     const abortController = new AbortController();
     abortRef.current = abortController;
 
+    // Create assistant message record early so F5 won't lose it
+    let assistantMsgId: number | null = null;
+    assistantMsgId = await saveMessage(sid, "assistant", "");
+
     try {
       const response = await fetch("/api/chat", {
         method: "POST",
@@ -202,9 +225,11 @@ export default function ChatInterface({
           errorMsg = errText;
         }
 
+        const errContent = friendlyError(errorMsg);
+        if (assistantMsgId) updateMessage(sid, assistantMsgId, errContent);
         setMessages([
           ...newMessages,
-          { role: "assistant", content: friendlyError(errorMsg), isError: true, status: "error", debugLogs: logs },
+          { role: "assistant", content: errContent, isError: true, status: "error", debugLogs: logs },
         ]);
         return;
       }
@@ -227,6 +252,7 @@ export default function ChatInterface({
         buffer = lines.pop() || "";
 
         let eventType = "";
+        let shouldPersist = false;
         for (const line of lines) {
           if (line.startsWith("event: ")) {
             eventType = line.slice(7).trim();
@@ -264,6 +290,7 @@ export default function ChatInterface({
                       tc.progress = undefined;
                     }
                     currentStatus = "thinking";
+                    shouldPersist = true;
                   }
                   break;
                 case "error":
@@ -271,10 +298,12 @@ export default function ChatInterface({
                     const errMsg = friendlyError(data.error || "Erro desconhecido");
                     assistantText += assistantText ? `\n\n${errMsg}` : errMsg;
                     currentStatus = "error";
+                    shouldPersist = true;
                   }
                   break;
                 case "done":
                   currentStatus = "done";
+                  shouldPersist = true;
                   break;
               }
 
@@ -294,6 +323,17 @@ export default function ChatInterface({
             }
           }
         }
+
+        // Persist at key milestones (tool_call_result, error, done)
+        if (shouldPersist && assistantMsgId) {
+          const cleanToolCalls = toolCalls.map(({ progress, ...rest }) => rest);
+          updateMessage(
+            sid,
+            assistantMsgId,
+            assistantText,
+            cleanToolCalls.length > 0 ? cleanToolCalls : undefined
+          );
+        }
       }
 
       setMessages([
@@ -307,13 +347,16 @@ export default function ChatInterface({
         },
       ]);
 
-      // Save assistant message after stream completes
-      saveMessage(
-        sid,
-        "assistant",
-        assistantText,
-        toolCalls.length > 0 ? toolCalls : undefined
-      );
+      // Final save
+      if (assistantMsgId) {
+        const cleanToolCalls = toolCalls.map(({ progress, ...rest }) => rest);
+        updateMessage(
+          sid,
+          assistantMsgId,
+          assistantText,
+          cleanToolCalls.length > 0 ? cleanToolCalls : undefined
+        );
+      }
 
       // Generate smart title after first response
       if (!titleUpdatedRef.current) {
@@ -329,11 +372,20 @@ export default function ChatInterface({
       }
     } catch (error) {
       if (error instanceof DOMException && error.name === "AbortError") {
-        // User cancelled — keep whatever was collected so far
+        // User cancelled — persist whatever was collected so far
         log("received", "Aborted by user", {});
         setMessages((prev) => {
           const last = prev[prev.length - 1];
           if (last?.role === "assistant") {
+            if (assistantMsgId) {
+              const cleanToolCalls = (last.toolCalls || []).map(({ progress, ...rest }) => rest);
+              updateMessage(
+                sid,
+                assistantMsgId,
+                last.content,
+                cleanToolCalls.length > 0 ? cleanToolCalls : undefined
+              );
+            }
             return [...prev.slice(0, -1), { ...last, status: "done" as const }];
           }
           return prev;
@@ -342,9 +394,11 @@ export default function ChatInterface({
         const raw = error instanceof Error ? error.message : "Erro de rede";
         log("received", "Fetch error", { message: raw });
 
+        const errContent = friendlyError(raw);
+        if (assistantMsgId) updateMessage(sid, assistantMsgId, errContent);
         setMessages([
           ...newMessages,
-          { role: "assistant", content: friendlyError(raw), isError: true, status: "error", debugLogs: logs },
+          { role: "assistant", content: errContent, isError: true, status: "error", debugLogs: logs },
         ]);
       }
     } finally {

@@ -110,3 +110,65 @@ export async function POST(
     );
   }
 }
+
+export async function PUT(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const userId = await getUserId();
+    const { id } = await params;
+    const sessionId = Number(id);
+
+    const session = await prisma.chatSession.findFirst({
+      where: { id: sessionId, userId },
+    });
+    if (!session) {
+      return NextResponse.json(
+        { error: "Session not found" },
+        { status: 404 }
+      );
+    }
+
+    const body = await request.json();
+    const { messageId, content, toolCalls } = body;
+
+    if (!messageId) {
+      return NextResponse.json(
+        { error: "messageId is required" },
+        { status: 400 }
+      );
+    }
+
+    const existing = await prisma.chatMessage.findFirst({
+      where: { id: Number(messageId), sessionId },
+    });
+    if (!existing) {
+      return NextResponse.json(
+        { error: "Message not found" },
+        { status: 404 }
+      );
+    }
+
+    const updated = await prisma.chatMessage.update({
+      where: { id: Number(messageId) },
+      data: {
+        ...(content !== undefined && { content }),
+        ...(toolCalls !== undefined && {
+          toolCalls: toolCalls ? JSON.stringify(toolCalls) : null,
+        }),
+      },
+    });
+
+    return NextResponse.json(updated);
+  } catch (error) {
+    if (error instanceof Error && error.message === "Unauthorized") {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    console.error("Update message error:", error);
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 }
+    );
+  }
+}
