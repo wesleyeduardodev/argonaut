@@ -1,7 +1,17 @@
+export interface DebugLogEntry {
+  timestamp: string;
+  direction: "sent" | "received";
+  label: string;
+  data: unknown;
+}
+
 export interface ChatMessage {
   role: "user" | "assistant";
   content: string;
   toolCalls?: ToolCallResult[];
+  status?: "thinking" | "tool_executing" | "done" | "error";
+  isError?: boolean;
+  debugLogs?: DebugLogEntry[];
 }
 
 export interface ToolCallResult {

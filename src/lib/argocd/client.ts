@@ -223,19 +223,6 @@ export class ArgoClient {
 
     const results = [];
     for (const target of restartTargets) {
-      // Patch with restartedAt annotation to trigger rolling restart
-      const patchBody = JSON.stringify({
-        spec: {
-          template: {
-            metadata: {
-              annotations: {
-                "kubectl.kubernetes.io/restartedAt": new Date().toISOString(),
-              },
-            },
-          },
-        },
-      });
-
       const group = target.group || "apps";
       const params = new URLSearchParams({
         name: target.name,
@@ -244,12 +231,12 @@ export class ArgoClient {
         group,
         kind: target.kind,
         version: "v1",
-        patchType: "application/merge-patch+json",
       });
 
-      const res = await this.request(
+      // ArgoCD resource actions endpoint expects the action name as a plain string
+      await this.request(
         `/api/v1/applications/${encodeURIComponent(name)}/resource/actions?${params}`,
-        { method: "POST", body: JSON.stringify({ action: "restart" }) }
+        { method: "POST", body: JSON.stringify("restart") }
       );
 
       results.push({

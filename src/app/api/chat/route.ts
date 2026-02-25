@@ -104,7 +104,18 @@ export async function POST(request: NextRequest) {
             }
           );
         } catch (error) {
-          const message = error instanceof Error ? error.message : "Unknown error";
+          let message = "Unknown error";
+          if (error instanceof Error) {
+            message = error.message;
+            // Try to extract nested API error messages
+            try {
+              const match = error.message.match(/\{[\s\S]*\}/);
+              if (match) {
+                const parsed = JSON.parse(match[0]);
+                if (parsed?.error?.message) message = parsed.error.message;
+              }
+            } catch { /* use original message */ }
+          }
           send("error", { error: message });
         } finally {
           controller.close();

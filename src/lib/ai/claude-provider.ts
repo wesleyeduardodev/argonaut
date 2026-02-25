@@ -39,12 +39,14 @@ export class ClaudeProvider implements AIProvider {
         messages: claudeMessages,
       });
 
-      const toolCalls: Array<{ id: string; name: string; input: Record<string, unknown> }> = [];
-      let hasText = false;
+      const toolCalls: Array<{
+        id: string;
+        name: string;
+        input: Record<string, unknown>;
+      }> = [];
 
       for (const block of response.content) {
         if (block.type === "text") {
-          hasText = true;
           onEvent({ type: "text", text: block.text });
         } else if (block.type === "tool_use") {
           const tc: ToolCall = {
@@ -62,7 +64,6 @@ export class ClaudeProvider implements AIProvider {
         break;
       }
 
-      // Add assistant message with the full content
       const assistantContent: ContentBlockParam[] = [];
       for (const block of response.content) {
         if (block.type === "text") {
@@ -79,7 +80,6 @@ export class ClaudeProvider implements AIProvider {
 
       claudeMessages.push({ role: "assistant", content: assistantContent });
 
-      // Execute tools and add results
       const toolResults: ToolResultBlockParam[] = [];
       for (const tc of toolCalls) {
         const result = await getToolResult(tc);
@@ -92,7 +92,6 @@ export class ClaudeProvider implements AIProvider {
 
       claudeMessages.push({ role: "user", content: toolResults });
 
-      // If stop_reason is end_turn, stop after processing tools
       if (response.stop_reason === "end_turn") {
         continueLoop = false;
       }
