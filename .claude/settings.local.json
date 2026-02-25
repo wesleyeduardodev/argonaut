@@ -18,7 +18,8 @@
       "Bash(cd:*)",
       "Bash(head:*)",
       "WebFetch(domain:cd.apps.argoproj.io)",
-      "WebFetch(domain:sourcegraph.com)"
+      "WebFetch(domain:sourcegraph.com)",
+      "Bash(find:*)"
     ]
   }
 }
