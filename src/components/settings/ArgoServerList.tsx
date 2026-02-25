@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import ArgoServerForm from "./ArgoServerForm";
+import ConfirmModal from "@/components/ui/ConfirmModal";
 
 interface ArgoServer {
   id: number;
@@ -18,6 +19,7 @@ export default function ArgoServerList() {
   const [editing, setEditing] = useState<ArgoServer | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [deleteTarget, setDeleteTarget] = useState<number | null>(null);
 
   const fetchServers = useCallback(async () => {
     try {
@@ -32,8 +34,10 @@ export default function ArgoServerList() {
     fetchServers();
   }, [fetchServers]);
 
-  async function handleDelete(id: number) {
-    if (!confirm("Deletar este servidor?")) return;
+  async function confirmDelete() {
+    if (deleteTarget === null) return;
+    const id = deleteTarget;
+    setDeleteTarget(null);
     await fetch(`/api/argo-servers?id=${id}`, { method: "DELETE" });
     fetchServers();
   }
@@ -157,7 +161,7 @@ export default function ArgoServerList() {
                     </svg>
                   </button>
                   <button
-                    onClick={() => handleDelete(s.id)}
+                    onClick={() => setDeleteTarget(s.id)}
                     className="p-2.5 text-text-muted hover:text-danger hover:bg-danger/10 rounded-xl transition-all"
                     title="Deletar"
                   >
@@ -172,6 +176,15 @@ export default function ArgoServerList() {
           ))}
         </div>
       )}
+
+      <ConfirmModal
+        open={deleteTarget !== null}
+        title="Excluir servidor"
+        description="O servidor ArgoCD e suas configurações serão removidos permanentemente."
+        confirmLabel="Excluir"
+        onConfirm={confirmDelete}
+        onCancel={() => setDeleteTarget(null)}
+      />
     </div>
   );
 }

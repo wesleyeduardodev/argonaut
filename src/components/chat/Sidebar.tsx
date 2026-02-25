@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import type { ChatSessionSummary } from "@/types";
+import ConfirmModal from "@/components/ui/ConfirmModal";
 
 interface SidebarProps {
   open: boolean;
@@ -43,6 +44,7 @@ export default function Sidebar({
   refreshKey,
 }: SidebarProps) {
   const [sessions, setSessions] = useState<ChatSessionSummary[]>([]);
+  const [deleteTarget, setDeleteTarget] = useState<number | null>(null);
 
   const fetchSessions = useCallback(async () => {
     try {
@@ -59,8 +61,10 @@ export default function Sidebar({
     fetchSessions();
   }, [fetchSessions, refreshKey]);
 
-  async function handleDelete(id: number) {
-    if (!confirm("Excluir esta conversa?")) return;
+  async function confirmDelete() {
+    if (deleteTarget === null) return;
+    const id = deleteTarget;
+    setDeleteTarget(null);
     const res = await fetch(`/api/sessions?id=${id}`, { method: "DELETE" });
     if (res.ok) {
       setSessions((prev) => prev.filter((s) => s.id !== id));
@@ -128,7 +132,7 @@ export default function Sidebar({
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        handleDelete(session.id);
+                        setDeleteTarget(session.id);
                       }}
                       className="p-1.5 mr-1 rounded opacity-0 group-hover:opacity-100 hover:bg-red-500/10 hover:text-red-400 transition-all"
                       title="Excluir conversa"
@@ -171,6 +175,15 @@ export default function Sidebar({
           </div>
         </div>
       )}
+
+      <ConfirmModal
+        open={deleteTarget !== null}
+        title="Excluir conversa"
+        description="Essa conversa e todas as suas mensagens serão excluídas permanentemente."
+        confirmLabel="Excluir"
+        onConfirm={confirmDelete}
+        onCancel={() => setDeleteTarget(null)}
+      />
     </>
   );
 }

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import ProviderForm from "./ProviderForm";
+import ConfirmModal from "@/components/ui/ConfirmModal";
 
 interface Provider {
   id: number;
@@ -23,6 +24,7 @@ export default function ProviderList() {
   const [editing, setEditing] = useState<Provider | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [deleteTarget, setDeleteTarget] = useState<number | null>(null);
 
   const fetchProviders = useCallback(async () => {
     try {
@@ -37,8 +39,10 @@ export default function ProviderList() {
     fetchProviders();
   }, [fetchProviders]);
 
-  async function handleDelete(id: number) {
-    if (!confirm("Deletar este provedor?")) return;
+  async function confirmDelete() {
+    if (deleteTarget === null) return;
+    const id = deleteTarget;
+    setDeleteTarget(null);
     await fetch(`/api/providers?id=${id}`, { method: "DELETE" });
     fetchProviders();
   }
@@ -162,7 +166,7 @@ export default function ProviderList() {
                       </svg>
                     </button>
                     <button
-                      onClick={() => handleDelete(p.id)}
+                      onClick={() => setDeleteTarget(p.id)}
                       className="p-2.5 text-text-muted hover:text-danger hover:bg-danger/10 rounded-xl transition-all"
                       title="Deletar"
                     >
@@ -178,6 +182,15 @@ export default function ProviderList() {
           })}
         </div>
       )}
+
+      <ConfirmModal
+        open={deleteTarget !== null}
+        title="Excluir provedor"
+        description="O provedor de IA e suas configurações serão removidos permanentemente."
+        confirmLabel="Excluir"
+        onConfirm={confirmDelete}
+        onCancel={() => setDeleteTarget(null)}
+      />
     </div>
   );
 }
