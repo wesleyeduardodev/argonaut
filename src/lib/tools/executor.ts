@@ -1,4 +1,7 @@
 import { ArgoClient } from "@/lib/argocd/client";
+import type { BatchSyncProgress } from "@/lib/argocd/client";
+
+export type OnToolProgress = (progress: BatchSyncProgress) => void;
 
 const MAX_OUTPUT_LENGTH = 4000;
 
@@ -11,7 +14,8 @@ function truncate(data: unknown): string {
 export async function executeTool(
   client: ArgoClient,
   toolName: string,
-  args: Record<string, unknown>
+  args: Record<string, unknown>,
+  onProgress?: OnToolProgress
 ): Promise<string> {
   try {
     let result: unknown;
@@ -72,6 +76,15 @@ export async function executeTool(
         break;
       case "list_repositories":
         result = await client.listRepositories();
+        break;
+      case "batch_sync":
+        result = await client.batchSync(
+          args.pattern as string,
+          args.batch_size ? Number(args.batch_size) : undefined,
+          args.max_retries ? Number(args.max_retries) : undefined,
+          args.health_timeout_seconds ? Number(args.health_timeout_seconds) : undefined,
+          onProgress
+        );
         break;
       default:
         return JSON.stringify({ error: `Unknown tool: ${toolName}` });

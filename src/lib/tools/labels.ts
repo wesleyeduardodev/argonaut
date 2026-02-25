@@ -16,6 +16,7 @@ export const TOOL_LABELS: Record<string, string> = {
   get_project: "Detalhes projeto",
   list_clusters: "Listar clusters",
   list_repositories: "Listar repositórios",
+  batch_sync: "Batch Sync",
 };
 
 export function generateTitle(toolCalls: ToolCallResult[], userMessage: string): string {

@@ -175,4 +175,35 @@ export const ARGOCD_TOOLS: ToolDefinition[] = [
       required: [],
     },
   },
+  {
+    name: "batch_sync",
+    description:
+      "Sync multiple applications in controlled batches. Filters apps by glob pattern, syncs N at a time, waits for all in a batch to become Healthy before moving to the next. Stops everything if a batch fails after retries. This is a long-running operation.",
+    parameters: {
+      type: "object",
+      properties: {
+        pattern: {
+          type: "string",
+          description:
+            "Glob pattern to match application names (e.g. 'my-app-*', '*-production', 'frontend-*')",
+        },
+        batch_size: {
+          type: "string",
+          description:
+            "Number of apps to sync per batch (default: 3)",
+        },
+        max_retries: {
+          type: "string",
+          description:
+            "Max retry attempts per batch before aborting (default: 2). Total attempts = max_retries + 1",
+        },
+        health_timeout_seconds: {
+          type: "string",
+          description:
+            "Seconds to wait for each batch to become healthy per attempt (default: 300)",
+        },
+      },
+      required: ["pattern"],
+    },
+  },
 ];

@@ -19,6 +19,27 @@ export interface Suggestion {
   prompt: string;
 }
 
+export interface BatchSyncProgress {
+  phase:
+    | "resolving"
+    | "batch_start"
+    | "syncing"
+    | "polling"
+    | "batch_complete"
+    | "batch_failed"
+    | "retrying"
+    | "complete"
+    | "aborted";
+  totalApps: number;
+  totalBatches: number;
+  currentBatch: number;
+  batchApps: string[];
+  appStatuses: Record<string, { syncStatus: string; healthStatus: string }>;
+  attempt: number;
+  maxRetries: number;
+  message: string;
+}
+
 export interface ToolCallResult {
   id: string;
   name: string;
@@ -26,10 +47,11 @@ export interface ToolCallResult {
   output?: string;
   isError?: boolean;
   suggestions?: Suggestion[];
+  progress?: BatchSyncProgress;
 }
 
 export interface SSEEvent {
-  type: "text" | "tool_call_start" | "tool_call_result" | "error" | "done";
+  type: "text" | "tool_call_start" | "tool_call_result" | "tool_call_progress" | "error" | "done";
   data: string | ToolCallResult;
 }
 

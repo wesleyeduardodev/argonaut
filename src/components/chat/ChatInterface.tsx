@@ -246,6 +246,14 @@ export default function ChatInterface({
                   toolCalls.push({ id: data.id, name: data.name, input: data.input });
                   currentStatus = "tool_executing";
                   break;
+                case "tool_call_progress":
+                  {
+                    const tcp = toolCalls.find((t) => t.id === data.id);
+                    if (tcp) {
+                      tcp.progress = data.progress;
+                    }
+                  }
+                  break;
                 case "tool_call_result":
                   {
                     const tc = toolCalls.find((t) => t.id === data.id);
@@ -253,6 +261,7 @@ export default function ChatInterface({
                       tc.output = data.output;
                       tc.isError = data.output?.includes('"error"');
                       if (data.suggestions) tc.suggestions = data.suggestions;
+                      tc.progress = undefined;
                     }
                     currentStatus = "thinking";
                   }

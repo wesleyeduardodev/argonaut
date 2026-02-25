@@ -6,6 +6,7 @@ import { createAIProvider } from "@/lib/ai/provider-factory";
 import { buildSystemPrompt } from "@/lib/ai/system-prompt";
 import { ArgoClient } from "@/lib/argocd/client";
 import { executeTool } from "@/lib/tools/executor";
+import type { OnToolProgress } from "@/lib/tools/executor";
 import { getSuggestions } from "@/lib/tools/suggestions";
 import type { ToolCall } from "@/lib/ai/types";
 
@@ -136,10 +137,17 @@ export async function POST(request: NextRequest) {
               }
             },
             async (toolCall: ToolCall) => {
+              const onProgress: OnToolProgress = (progress) => {
+                send("tool_call_progress", {
+                  id: toolCall.id,
+                  progress,
+                });
+              };
               const result = await executeTool(
                 argoClient,
                 toolCall.name,
-                toolCall.input
+                toolCall.input,
+                onProgress
               );
               const suggestions = getSuggestions(toolCall.name);
               send("tool_call_result", {

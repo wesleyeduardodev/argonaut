@@ -14,7 +14,9 @@ Respond in the user's language. Be concise — short sentences, bullet points, a
 
 5. **Errors**: If a tool fails, explain the error briefly and suggest next steps.
 
-6. **Truncation**: Tool outputs may be truncated. Mention it only if it affects the answer.`;
+6. **Truncation**: Tool outputs may be truncated. Mention it only if it affects the answer.
+
+7. **Batch sync**: When the user asks to sync multiple applications at once (e.g. "sync all my-app apps in batches of 3", "deploy all *-production apps"), use batch_sync with the appropriate glob pattern. ALWAYS call list_applications first to confirm matches before executing batch_sync. Default batch_size is 3 if not specified. Warn that this is a long-running operation. If it fails, suggest checking unhealthy apps with get_application_logs.`;
 
 export function buildSystemPrompt(appContext?: string): string {
   if (!appContext) return BASE_PROMPT;

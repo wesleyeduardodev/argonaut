@@ -38,6 +38,11 @@ const SUGGESTIONS: Record<string, Suggestion[]> = {
   delete_application: [
     { label: "Listar apps", prompt: "Liste todas as aplicações" },
   ],
+  batch_sync: [
+    { label: "Ver problemas", prompt: "Quais aplicações estão com problemas?" },
+    { label: "Ver logs", prompt: "Mostre os logs das aplicações com erro" },
+    { label: "Listar apps", prompt: "Liste todas as aplicações com status atualizado" },
+  ],
 };
 
 export function getSuggestions(toolName: string): Suggestion[] {

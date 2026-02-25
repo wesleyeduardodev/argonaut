@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import type { ToolCallResult } from "@/types";
+import type { ToolCallResult, BatchSyncProgress } from "@/types";
 
 const TOOL_LABELS: Record<string, string> = {
   list_applications: "Listando aplicações",
@@ -19,6 +19,7 @@ const TOOL_LABELS: Record<string, string> = {
   get_project: "Buscando detalhes do projeto",
   list_clusters: "Listando clusters",
   list_repositories: "Listando repositórios",
+  batch_sync: "Sync em lote",
 };
 
 const TOOL_ICONS: Record<string, string> = {
@@ -37,7 +38,183 @@ const TOOL_ICONS: Record<string, string> = {
   get_project: "📂",
   list_clusters: "🖥️",
   list_repositories: "📚",
+  batch_sync: "🚀",
 };
+
+// ─── Batch Progress Display ───
+
+const PHASE_COLORS: Record<string, string> = {
+  resolving: "text-primary",
+  batch_start: "text-primary",
+  syncing: "text-primary",
+  polling: "text-primary",
+  batch_complete: "text-success",
+  complete: "text-success",
+  retrying: "text-warning",
+  batch_failed: "text-warning",
+  aborted: "text-danger",
+};
+
+const PHASE_BORDER: Record<string, string> = {
+  resolving: "border-primary/30",
+  batch_start: "border-primary/30",
+  syncing: "border-primary/30",
+  polling: "border-primary/30",
+  batch_complete: "border-success/30",
+  complete: "border-success/30",
+  retrying: "border-warning/30",
+  batch_failed: "border-warning/30",
+  aborted: "border-danger/30",
+};
+
+const PHASE_BG: Record<string, string> = {
+  resolving: "bg-primary/5",
+  batch_start: "bg-primary/5",
+  syncing: "bg-primary/5",
+  polling: "bg-primary/5",
+  batch_complete: "bg-success/5",
+  complete: "bg-success/5",
+  retrying: "bg-warning/5",
+  batch_failed: "bg-warning/5",
+  aborted: "bg-danger/5",
+};
+
+const PHASE_BAR: Record<string, string> = {
+  resolving: "bg-primary",
+  batch_start: "bg-primary",
+  syncing: "bg-primary",
+  polling: "bg-primary",
+  batch_complete: "bg-success",
+  complete: "bg-success",
+  retrying: "bg-warning",
+  batch_failed: "bg-warning",
+  aborted: "bg-danger",
+};
+
+function statusIcon(healthStatus: string): string {
+  switch (healthStatus) {
+    case "Healthy":
+      return "✓";
+    case "Progressing":
+      return "⟳";
+    case "Degraded":
+    case "Suspended":
+      return "⚠";
+    case "Missing":
+    case "Unknown":
+      return "?";
+    default:
+      return "…";
+  }
+}
+
+function statusColor(healthStatus: string): string {
+  switch (healthStatus) {
+    case "Healthy":
+      return "text-success";
+    case "Progressing":
+      return "text-primary";
+    case "Degraded":
+    case "Suspended":
+      return "text-warning";
+    case "Missing":
+      return "text-danger";
+    default:
+      return "text-text-muted";
+  }
+}
+
+function BatchProgressDisplay({ progress }: { progress: BatchSyncProgress }) {
+  const { phase, totalBatches, currentBatch, batchApps, appStatuses, attempt, maxRetries, message } = progress;
+
+  const completedBatches = phase === "complete"
+    ? totalBatches
+    : phase === "batch_complete"
+    ? currentBatch
+    : Math.max(0, currentBatch - 1);
+  const pct = totalBatches > 0 ? Math.round((completedBatches / totalBatches) * 100) : 0;
+
+  const phaseColor = PHASE_COLORS[phase] || "text-text-muted";
+  const phaseBorder = PHASE_BORDER[phase] || "border-border";
+  const phaseBg = PHASE_BG[phase] || "bg-surface/50";
+  const phaseBar = PHASE_BAR[phase] || "bg-primary";
+
+  const isActive = ["syncing", "polling", "batch_start", "resolving"].includes(phase);
+
+  return (
+    <div className={`my-2 rounded-lg border ${phaseBorder} ${phaseBg} overflow-hidden`}>
+      {/* Header */}
+      <div className="px-3 py-2 flex items-center gap-2">
+        <span className="text-sm">🚀</span>
+        {isActive && (
+          <span className="w-3 h-3 border-2 border-primary border-t-transparent rounded-full animate-spin flex-shrink-0" />
+        )}
+        <span className={`text-sm font-medium ${phaseColor}`}>
+          Sync em lote
+        </span>
+        {totalBatches > 0 && (
+          <span className="text-xs text-text-muted ml-auto">
+            Batch {currentBatch}/{totalBatches}
+          </span>
+        )}
+      </div>
+
+      {/* Progress bar */}
+      {totalBatches > 0 && (
+        <div className="px-3 pb-1">
+          <div className="flex items-center gap-2">
+            <div className="flex-1 h-2 rounded-full bg-surface-hover overflow-hidden">
+              <div
+                className={`h-full rounded-full transition-all duration-500 ${phaseBar}`}
+                style={{ width: `${pct}%` }}
+              />
+            </div>
+            <span className="text-xs text-text-muted font-code w-8 text-right">{pct}%</span>
+          </div>
+        </div>
+      )}
+
+      {/* Message */}
+      <div className="px-3 py-1">
+        <p className="text-xs text-text-muted">{message}</p>
+      </div>
+
+      {/* App statuses */}
+      {batchApps.length > 0 && Object.keys(appStatuses).length > 0 && (
+        <div className="px-3 pb-2">
+          <div className="space-y-0.5">
+            {batchApps.map((name) => {
+              const status = appStatuses[name];
+              if (!status) return null;
+              const icon = statusIcon(status.healthStatus);
+              const color = statusColor(status.healthStatus);
+              return (
+                <div key={name} className="flex items-center gap-2 text-xs">
+                  <span className={`${color} w-3 text-center flex-shrink-0`}>{icon}</span>
+                  <span className="text-text truncate flex-1 font-code">{name}</span>
+                  <span className="text-text-muted font-code flex-shrink-0">
+                    {status.syncStatus}/{status.healthStatus}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Attempt indicator */}
+      {attempt > 0 && maxRetries > 0 && (
+        <div className="px-3 pb-2">
+          <span className="text-xs text-text-muted">
+            Tentativa {attempt}/{maxRetries + 1}
+          </span>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Main ToolCallDisplay ───
 
 interface ToolCallDisplayProps {
   toolCall: ToolCallResult;
@@ -59,6 +236,31 @@ export default function ToolCallDisplay({ toolCall, onSuggestionClick }: ToolCal
       setElapsed((ms / 1000).toFixed(1) + "s");
     }
   }, [isExecuting, elapsed]);
+
+  // Show batch progress display for batch_sync
+  if (toolCall.name === "batch_sync" && toolCall.progress) {
+    return (
+      <>
+        <BatchProgressDisplay progress={toolCall.progress} />
+        {toolCall.suggestions && toolCall.suggestions.length > 0 && !isExecuting && (
+          <div className="px-3 py-2 flex flex-wrap gap-2">
+            {toolCall.suggestions.map((s) => (
+              <button
+                key={s.label}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onSuggestionClick?.(s.prompt);
+                }}
+                className="px-2.5 py-1 text-xs rounded-full border border-primary/30 bg-primary/5 hover:bg-primary/15 text-primary transition-colors"
+              >
+                {s.label}
+              </button>
+            ))}
+          </div>
+        )}
+      </>
+    );
+  }
 
   const borderColor = toolCall.isError
     ? "border-l-danger"

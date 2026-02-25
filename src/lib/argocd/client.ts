@@ -1,6 +1,37 @@
 import type { ArgoServerConfig } from "./types";
 
+export interface BatchSyncProgress {
+  phase:
+    | "resolving"
+    | "batch_start"
+    | "syncing"
+    | "polling"
+    | "batch_complete"
+    | "batch_failed"
+    | "retrying"
+    | "complete"
+    | "aborted";
+  totalApps: number;
+  totalBatches: number;
+  currentBatch: number;
+  batchApps: string[];
+  appStatuses: Record<string, { syncStatus: string; healthStatus: string }>;
+  attempt: number;
+  maxRetries: number;
+  message: string;
+}
+
+export type OnBatchProgress = (progress: BatchSyncProgress) => void;
+
 const tokenCache = new Map<string, { token: string; expiresAt: number }>();
+
+function globToRegex(pattern: string): RegExp {
+  const escaped = pattern
+    .replace(/[.+^${}()|[\]\\]/g, "\\$&")
+    .replace(/\*/g, ".*")
+    .replace(/\?/g, ".");
+  return new RegExp(`^${escaped}$`, "i");
+}
 
 export class ArgoClient {
   private baseUrl: string;
@@ -379,5 +410,199 @@ export class ArgoClient {
         status: conn?.status,
       };
     });
+  }
+
+  // ─── Batch Sync ───
+
+  async batchSync(
+    pattern: string,
+    batchSize = 3,
+    maxRetries = 2,
+    healthTimeoutSeconds = 300,
+    onProgress?: OnBatchProgress
+  ): Promise<unknown> {
+    const POLL_INTERVAL = 10_000; // 10s
+
+    // 1. Resolve apps matching pattern
+    const allApps = (await this.listApplications()) as Array<{
+      name: string;
+      syncStatus: string;
+      healthStatus: string;
+    }>;
+
+    const regex = globToRegex(pattern);
+    const matched = allApps
+      .filter((a) => regex.test(a.name))
+      .sort((a, b) => a.name.localeCompare(b.name));
+
+    if (matched.length === 0) {
+      return {
+        success: false,
+        error: `No applications matching pattern "${pattern}"`,
+        matchedApps: [],
+      };
+    }
+
+    const appNames = matched.map((a) => a.name);
+    const totalApps = appNames.length;
+
+    // 2. Split into batches
+    const batches: string[][] = [];
+    for (let i = 0; i < appNames.length; i += batchSize) {
+      batches.push(appNames.slice(i, i + batchSize));
+    }
+    const totalBatches = batches.length;
+
+    const emit = (
+      phase: BatchSyncProgress["phase"],
+      currentBatch: number,
+      batchApps: string[],
+      appStatuses: Record<string, { syncStatus: string; healthStatus: string }>,
+      attempt: number,
+      message: string
+    ) => {
+      onProgress?.({
+        phase,
+        totalApps,
+        totalBatches,
+        currentBatch,
+        batchApps,
+        appStatuses,
+        attempt,
+        maxRetries,
+        message,
+      });
+    };
+
+    emit("resolving", 0, [], {}, 0, `Found ${totalApps} apps matching "${pattern}", ${totalBatches} batches of ${batchSize}`);
+
+    const completedApps: string[] = [];
+    const failedApps: string[] = [];
+
+    // 3. Process each batch
+    for (let batchIdx = 0; batchIdx < batches.length; batchIdx++) {
+      const batch = batches[batchIdx];
+      const batchNum = batchIdx + 1;
+      let batchSuccess = false;
+
+      emit("batch_start", batchNum, batch, {}, 0, `Starting batch ${batchNum}/${totalBatches}: ${batch.join(", ")}`);
+
+      for (let attempt = 1; attempt <= maxRetries + 1; attempt++) {
+        // Sync all apps in batch in parallel
+        emit("syncing", batchNum, batch, {}, attempt, `Syncing batch ${batchNum}/${totalBatches} (attempt ${attempt}/${maxRetries + 1})`);
+
+        const syncResults = await Promise.allSettled(
+          batch.map((name) => this.syncApplication(name))
+        );
+
+        // Build initial statuses from sync results
+        const appStatuses: Record<string, { syncStatus: string; healthStatus: string }> = {};
+        for (let i = 0; i < batch.length; i++) {
+          const name = batch[i];
+          if (syncResults[i].status === "rejected") {
+            const reason = syncResults[i] as PromiseRejectedResult;
+            appStatuses[name] = {
+              syncStatus: "SyncError",
+              healthStatus: reason.reason?.message || "Sync failed",
+            };
+          } else {
+            appStatuses[name] = { syncStatus: "Syncing", healthStatus: "Progressing" };
+          }
+        }
+
+        emit("polling", batchNum, batch, appStatuses, attempt, `Waiting for batch ${batchNum} to become healthy...`);
+
+        // Poll health until timeout
+        const deadline = Date.now() + healthTimeoutSeconds * 1000;
+        let allHealthy = false;
+
+        while (Date.now() < deadline) {
+          await new Promise((r) => setTimeout(r, POLL_INTERVAL));
+
+          // Check each app's health
+          for (const name of batch) {
+            try {
+              const app = (await this.getApplication(name)) as {
+                status: {
+                  sync: { status: string };
+                  health: { status: string };
+                };
+              };
+              appStatuses[name] = {
+                syncStatus: app.status?.sync?.status || "Unknown",
+                healthStatus: app.status?.health?.status || "Unknown",
+              };
+            } catch {
+              appStatuses[name] = { syncStatus: "Unknown", healthStatus: "Unknown" };
+            }
+          }
+
+          const healthyCount = batch.filter(
+            (n) => appStatuses[n].healthStatus === "Healthy"
+          ).length;
+
+          emit(
+            "polling",
+            batchNum,
+            batch,
+            appStatuses,
+            attempt,
+            `Batch ${batchNum}: ${healthyCount}/${batch.length} healthy`
+          );
+
+          if (healthyCount === batch.length) {
+            allHealthy = true;
+            break;
+          }
+        }
+
+        if (allHealthy) {
+          completedApps.push(...batch);
+          emit("batch_complete", batchNum, batch, appStatuses, attempt, `Batch ${batchNum}/${totalBatches} complete — all healthy`);
+          batchSuccess = true;
+          break;
+        }
+
+        // Not all healthy — retry or fail
+        if (attempt <= maxRetries) {
+          emit("retrying", batchNum, batch, appStatuses, attempt, `Batch ${batchNum} not healthy after ${healthTimeoutSeconds}s — retrying (${attempt}/${maxRetries})`);
+        } else {
+          const unhealthy = batch.filter((n) => appStatuses[n].healthStatus !== "Healthy");
+          failedApps.push(...unhealthy);
+          emit("batch_failed", batchNum, batch, appStatuses, attempt, `Batch ${batchNum} failed after ${maxRetries + 1} attempts. Unhealthy: ${unhealthy.join(", ")}`);
+        }
+      }
+
+      if (!batchSuccess) {
+        // Abort remaining batches
+        const remaining = batches.slice(batchIdx + 1).flat();
+        emit("aborted", batchNum, batch, {}, maxRetries + 1, `Aborted at batch ${batchNum}/${totalBatches}. ${remaining.length} apps not attempted: ${remaining.join(", ")}`);
+
+        return {
+          success: false,
+          completedApps,
+          failedApps,
+          skippedApps: remaining,
+          totalApps,
+          completedBatches: batchIdx,
+          totalBatches,
+          message: `Stopped at batch ${batchNum}/${totalBatches}. ${completedApps.length} apps synced, ${failedApps.length} failed, ${remaining.length} skipped.`,
+        };
+      }
+    }
+
+    // All batches completed successfully
+    emit("complete", totalBatches, [], {}, 0, `All ${totalBatches} batches complete — ${totalApps} apps synced successfully`);
+
+    return {
+      success: true,
+      completedApps,
+      failedApps: [],
+      skippedApps: [],
+      totalApps,
+      completedBatches: totalBatches,
+      totalBatches,
+      message: `All ${totalBatches} batches complete. ${totalApps} apps synced and healthy.`,
+    };
   }
 }
