@@ -16,7 +16,6 @@ export class ArgoClient {
       return this.config.token;
     }
 
-    // userpass: login and cache JWT
     const cacheKey = `${this.baseUrl}:${this.config.username}`;
     const cached = tokenCache.get(cacheKey);
     if (cached && cached.expiresAt > Date.now()) {
@@ -37,7 +36,6 @@ export class ArgoClient {
     }
 
     const data = await res.json();
-    // Cache for 23 hours (ArgoCD JWTs typically last 24h)
     tokenCache.set(cacheKey, {
       token: data.token,
       expiresAt: Date.now() + 23 * 60 * 60 * 1000,
@@ -47,14 +45,7 @@ export class ArgoClient {
   }
 
   private async rawFetch(path: string, init?: RequestInit): Promise<Response> {
-    const url = `${this.baseUrl}${path}`;
-
-    // Node.js fetch doesn't support rejectUnauthorized directly.
-    // For insecure mode, we set the NODE_TLS_REJECT_UNAUTHORIZED env var
-    // temporarily or use an agent. In Next.js, we handle this via env.
-    return fetch(url, {
-      ...init,
-    });
+    return fetch(`${this.baseUrl}${path}`, { ...init });
   }
 
   private async request(path: string, init?: RequestInit): Promise<Response> {
@@ -76,10 +67,11 @@ export class ArgoClient {
     return res;
   }
 
+  // ─── Applications ───
+
   async listApplications(): Promise<unknown> {
     const res = await this.request("/api/v1/applications");
     const data = await res.json();
-    // Return summary to save tokens
     return (data.items || []).map((app: Record<string, unknown>) => {
       const meta = app.metadata as Record<string, unknown>;
       const spec = app.spec as Record<string, unknown>;
@@ -103,22 +95,40 @@ export class ArgoClient {
     return res.json();
   }
 
+  // Ref: ApplicationSyncRequest { name, revision?, dryRun?, prune?, strategy?, ... }
   async syncApplication(name: string): Promise<unknown> {
     const res = await this.request(
       `/api/v1/applications/${encodeURIComponent(name)}/sync`,
-      { method: "POST", body: JSON.stringify({}) }
+      {
+        method: "POST",
+        body: JSON.stringify({
+          name,
+          prune: false,
+          dryRun: false,
+        }),
+      }
     );
     return res.json();
   }
 
+  // Ref: ApplicationRollbackRequest { name, id, dryRun?, prune? }
   async rollbackApplication(name: string, id: number): Promise<unknown> {
     const res = await this.request(
       `/api/v1/applications/${encodeURIComponent(name)}/rollback`,
-      { method: "POST", body: JSON.stringify({ id }) }
+      {
+        method: "POST",
+        body: JSON.stringify({
+          name,
+          id: String(id),
+          dryRun: false,
+          prune: false,
+        }),
+      }
     );
     return res.json();
   }
 
+  // Ref: query params: podName?, container?, tailLines?, follow?, sinceSeconds?, ...
   async getApplicationLogs(
     name: string,
     container?: string,
@@ -133,7 +143,7 @@ export class ArgoClient {
       `/api/v1/applications/${encodeURIComponent(name)}/logs?${params}`
     );
     const text = await res.text();
-    // Logs come as NDJSON; extract log lines
+    // Logs come as NDJSON
     const lines = text
       .split("\n")
       .filter(Boolean)
@@ -185,23 +195,26 @@ export class ArgoClient {
     return res.json();
   }
 
+  // Ref: DELETE query params: cascade?, propagationPolicy?
   async deleteApplication(name: string): Promise<unknown> {
+    const params = new URLSearchParams({ cascade: "true" });
     const res = await this.request(
-      `/api/v1/applications/${encodeURIComponent(name)}`,
+      `/api/v1/applications/${encodeURIComponent(name)}?${params}`,
       { method: "DELETE" }
     );
     return res.json();
   }
 
+  // ─── Restart (resource actions) ───
+  // Ref: ResourceActionRunRequest { name, namespace, resourceName, version, group, kind, action }
+  // v1 endpoint (body = plain string), v2 endpoint (body = object)
   async restartApplication(name: string): Promise<unknown> {
-    // Get the app to find deployments
     const app = (await this.getApplication(name)) as {
       metadata: { name: string };
       spec: { destination: { namespace: string } };
     };
     const namespace = app.spec?.destination?.namespace || "default";
 
-    // Get resource tree to find Deployments/StatefulSets
     const tree = (await this.getResourceTree(name)) as {
       nodes: Array<{
         kind: string;
@@ -224,30 +237,50 @@ export class ArgoClient {
     const results = [];
     for (const target of restartTargets) {
       const group = target.group || "apps";
+      const ns = target.namespace || namespace;
+
+      // Try v2 endpoint first (object body), fallback to v1 (string body)
       const params = new URLSearchParams({
         name: target.name,
-        namespace: target.namespace || namespace,
+        namespace: ns,
         resourceName: target.name,
         group,
         kind: target.kind,
         version: "v1",
       });
 
-      // ArgoCD resource actions endpoint expects the action name as a plain string
-      await this.request(
-        `/api/v1/applications/${encodeURIComponent(name)}/resource/actions?${params}`,
-        { method: "POST", body: JSON.stringify("restart") }
-      );
+      try {
+        // v2: body is JSON object with action field
+        await this.request(
+          `/api/v1/applications/${encodeURIComponent(name)}/resource/actions/v2?${params}`,
+          {
+            method: "POST",
+            body: JSON.stringify({ action: "restart" }),
+          }
+        );
+      } catch {
+        // v1 fallback: body is plain string
+        await this.request(
+          `/api/v1/applications/${encodeURIComponent(name)}/resource/actions?${params}`,
+          {
+            method: "POST",
+            body: JSON.stringify("restart"),
+          }
+        );
+      }
 
       results.push({
         kind: target.kind,
         name: target.name,
+        namespace: ns,
         status: "restarted",
       });
     }
 
     return { restarted: results };
   }
+
+  // ─── Projects ───
 
   async listProjects(): Promise<unknown> {
     const res = await this.request("/api/v1/projects");
@@ -268,6 +301,8 @@ export class ArgoClient {
     );
     return res.json();
   }
+
+  // ─── Clusters & Repos ───
 
   async listClusters(): Promise<unknown> {
     const res = await this.request("/api/v1/clusters");

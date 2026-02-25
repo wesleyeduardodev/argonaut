@@ -17,7 +17,8 @@
       "Bash(cd /c/Users/wesle/OneDrive/Documentos/projetos-git/mcp-argo && npx next build 2>&1)",
       "Bash(cd:*)",
       "Bash(head:*)",
-      "WebFetch(domain:cd.apps.argoproj.io)"
+      "WebFetch(domain:cd.apps.argoproj.io)",
+      "WebFetch(domain:sourcegraph.com)"
     ]
   }
 }
