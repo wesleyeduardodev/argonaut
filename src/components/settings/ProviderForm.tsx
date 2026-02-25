@@ -40,8 +40,12 @@ function Toggle({ checked, onChange, label }: { checked: boolean; onChange: (v: 
   );
 }
 
+function getProviderLabel(providerId: string): string {
+  const config = PROVIDER_CONFIGS.find((p) => p.id === providerId);
+  return config ? config.label.split(" ")[0] : providerId;
+}
+
 export default function ProviderForm({ initial, onSave, onCancel }: ProviderFormProps) {
-  const [name, setName] = useState(initial?.name || "");
   const [provider, setProvider] = useState(initial?.provider || "claude");
   const [apiKey, setApiKey] = useState("");
   const [defaultModel, setDefaultModel] = useState(
@@ -61,7 +65,7 @@ export default function ProviderForm({ initial, onSave, onCancel }: ProviderForm
 
     try {
       const body: Record<string, unknown> = {
-        name,
+        name: getProviderLabel(provider),
         provider,
         defaultModel,
         isDefault,
@@ -147,27 +151,6 @@ export default function ProviderForm({ initial, onSave, onCancel }: ProviderForm
               </button>
             );
           })}
-        </div>
-      </div>
-
-      {/* Name */}
-      <div>
-        <label className="block text-xs font-medium text-text-muted uppercase tracking-wider mb-2">Nome</label>
-        <div className="relative">
-          <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-text-muted pointer-events-none">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
-              <path d="M15.5 3h-7A2.5 2.5 0 0 0 6 5.5v13A2.5 2.5 0 0 0 8.5 21h7a2.5 2.5 0 0 0 2.5-2.5v-13A2.5 2.5 0 0 0 15.5 3z" />
-              <path d="M10 15h4M12 7v4" />
-            </svg>
-          </div>
-          <input
-            type="text"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            required
-            placeholder="Ex: Meu Claude"
-            className="field-input field-with-icon"
-          />
         </div>
       </div>
 
