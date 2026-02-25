@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { encrypt, decrypt, maskSecret } from "@/lib/encryption";
+import { getUserId } from "@/lib/auth";
 
 function maskServer(server: {
   id: number;
@@ -13,6 +14,7 @@ function maskServer(server: {
   insecure: boolean;
   isDefault: boolean;
   createdAt: Date;
+  userId: number;
 }) {
   return {
     ...server,
@@ -24,11 +26,17 @@ function maskServer(server: {
 
 export async function GET() {
   try {
+    const userId = await getUserId();
+
     const servers = await prisma.argoServer.findMany({
+      where: { userId },
       orderBy: { createdAt: "desc" },
     });
     return NextResponse.json(servers.map(maskServer));
   } catch (error) {
+    if (error instanceof Error && error.message === "Unauthorized") {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
     console.error("Get argo servers error:", error);
     return NextResponse.json(
       { error: "Internal server error" },
@@ -39,6 +47,7 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
+    const userId = await getUserId();
     const body = await request.json();
     const { name, url, authType, token, username, password, insecure, isDefault } = body;
 
@@ -65,7 +74,7 @@ export async function POST(request: NextRequest) {
 
     if (isDefault) {
       await prisma.argoServer.updateMany({
-        where: { isDefault: true },
+        where: { isDefault: true, userId },
         data: { isDefault: false },
       });
     }
@@ -80,11 +89,15 @@ export async function POST(request: NextRequest) {
         password: password ? encrypt(password) : null,
         insecure: insecure || false,
         isDefault: isDefault || false,
+        userId,
       },
     });
 
     return NextResponse.json(maskServer(created), { status: 201 });
   } catch (error) {
+    if (error instanceof Error && error.message === "Unauthorized") {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
     console.error("Create argo server error:", error);
     return NextResponse.json(
       { error: "Internal server error" },
@@ -95,6 +108,7 @@ export async function POST(request: NextRequest) {
 
 export async function PUT(request: NextRequest) {
   try {
+    const userId = await getUserId();
     const body = await request.json();
     const { id, name, url, authType, token, username, password, insecure, isDefault } = body;
 
@@ -102,9 +116,16 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: "id is required" }, { status: 400 });
     }
 
+    const existing = await prisma.argoServer.findFirst({
+      where: { id, userId },
+    });
+    if (!existing) {
+      return NextResponse.json({ error: "Server not found" }, { status: 404 });
+    }
+
     if (isDefault) {
       await prisma.argoServer.updateMany({
-        where: { isDefault: true, NOT: { id } },
+        where: { isDefault: true, NOT: { id }, userId },
         data: { isDefault: false },
       });
     }
@@ -127,6 +148,9 @@ export async function PUT(request: NextRequest) {
 
     return NextResponse.json(maskServer(updated));
   } catch (error) {
+    if (error instanceof Error && error.message === "Unauthorized") {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
     console.error("Update argo server error:", error);
     return NextResponse.json(
       { error: "Internal server error" },
@@ -137,6 +161,7 @@ export async function PUT(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   try {
+    const userId = await getUserId();
     const { searchParams } = new URL(request.url);
     const id = searchParams.get("id");
 
@@ -144,9 +169,19 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: "id is required" }, { status: 400 });
     }
 
-    await prisma.argoServer.delete({ where: { id: Number(id) } });
+    const deleted = await prisma.argoServer.deleteMany({
+      where: { id: Number(id), userId },
+    });
+
+    if (deleted.count === 0) {
+      return NextResponse.json({ error: "Server not found" }, { status: 404 });
+    }
+
     return NextResponse.json({ success: true });
   } catch (error) {
+    if (error instanceof Error && error.message === "Unauthorized") {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
     console.error("Delete argo server error:", error);
     return NextResponse.json(
       { error: "Internal server error" },

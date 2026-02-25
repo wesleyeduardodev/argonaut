@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/db";
 import { decrypt } from "@/lib/encryption";
+import { getUserId } from "@/lib/auth";
 import { createAIProvider } from "@/lib/ai/provider-factory";
 import { ArgoClient } from "@/lib/argocd/client";
 import { executeTool } from "@/lib/tools/executor";
@@ -13,6 +14,7 @@ export async function POST(request: NextRequest) {
   const encoder = new TextEncoder();
 
   try {
+    const userId = await getUserId();
     const body = await request.json();
     const { messages, providerId, model, argoServerId } = body;
 
@@ -23,10 +25,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Fetch provider and server configs
+    // Fetch provider and server configs (scoped to user)
     const [providerRecord, serverRecord] = await Promise.all([
-      prisma.aIProvider.findUnique({ where: { id: Number(providerId) } }),
-      prisma.argoServer.findUnique({ where: { id: Number(argoServerId) } }),
+      prisma.aIProvider.findFirst({ where: { id: Number(providerId), userId } }),
+      prisma.argoServer.findFirst({ where: { id: Number(argoServerId), userId } }),
     ]);
 
     if (!providerRecord) {
@@ -131,6 +133,12 @@ export async function POST(request: NextRequest) {
       },
     });
   } catch (error) {
+    if (error instanceof Error && error.message === "Unauthorized") {
+      return new Response(
+        JSON.stringify({ error: "Unauthorized" }),
+        { status: 401, headers: { "Content-Type": "application/json" } }
+      );
+    }
     console.error("Chat error:", error);
     return new Response(
       JSON.stringify({ error: "Internal server error" }),

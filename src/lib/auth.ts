@@ -54,6 +54,12 @@ export async function getSession(): Promise<{ userId: number } | null> {
   }
 }
 
+export async function getUserId(): Promise<number> {
+  const session = await getSession();
+  if (!session) throw new Error("Unauthorized");
+  return session.userId;
+}
+
 export async function destroySession(): Promise<void> {
   const cookieStore = await cookies();
   cookieStore.delete(COOKIE_NAME);

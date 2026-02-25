@@ -1,8 +1,8 @@
-import LoginForm from "@/components/auth/LoginForm";
+import RegisterForm from "@/components/auth/RegisterForm";
 import ArgonautLogo from "@/components/ArgonautLogo";
 import Link from "next/link";
 
-export default function LoginPage() {
+export default function RegisterPage() {
   return (
     <div className="min-h-screen flex items-center justify-center px-4 relative overflow-hidden">
       {/* Background effects */}
@@ -23,20 +23,20 @@ export default function LoginPage() {
             Argonaut <span className="text-primary">AI</span>
           </h1>
           <p className="text-text-muted text-sm mt-2">
-            Gerencie suas aplicações ArgoCD com inteligência artificial
+            Crie sua conta para começar
           </p>
         </div>
 
-        {/* Login card */}
+        {/* Register card */}
         <div className="card-gradient p-6">
-          <LoginForm />
+          <RegisterForm />
         </div>
 
-        {/* Link to register */}
+        {/* Link to login */}
         <p className="text-center text-text-muted text-sm mt-6">
-          Não tem uma conta?{" "}
-          <Link href="/register" className="text-primary hover:text-primary-hover transition-colors font-medium">
-            Registre-se
+          Já tem uma conta?{" "}
+          <Link href="/login" className="text-primary hover:text-primary-hover transition-colors font-medium">
+            Entrar
           </Link>
         </p>
 

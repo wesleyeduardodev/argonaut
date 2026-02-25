@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { decrypt } from "@/lib/encryption";
+import { getUserId } from "@/lib/auth";
 
 export async function POST(request: NextRequest) {
   try {
+    const userId = await getUserId();
     const body = await request.json();
     const { url, authType, token, username, password, insecure, existingId } = body;
 
@@ -15,8 +17,8 @@ export async function POST(request: NextRequest) {
 
     // If editing existing and no new credentials provided, use stored ones
     if (existingId && !token && !password) {
-      const existing = await prisma.argoServer.findUnique({
-        where: { id: existingId },
+      const existing = await prisma.argoServer.findFirst({
+        where: { id: existingId, userId },
       });
       if (existing) {
         if (existing.authType === "token" && existing.token) {
@@ -70,6 +72,9 @@ export async function POST(request: NextRequest) {
       message: `Connection successful! Found ${count} application(s).`,
     });
   } catch (error) {
+    if (error instanceof Error && error.message === "Unauthorized") {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
     console.error("Test connection error:", error);
     const message = error instanceof Error ? error.message : "Unknown error";
     return NextResponse.json(

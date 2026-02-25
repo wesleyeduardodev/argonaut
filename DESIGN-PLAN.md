@@ -222,7 +222,7 @@ Implementação: array de objetos `{ icon, label, prompt }` que ao clicar chamam
 
 ## Features — Roadmap por Fase
 
-### Fase 1 — Visual Polish (sem mudança de banco)
+### Fase 1 — Visual Polish (sem mudança de banco) - FEITO
 
 | # | Feature | Descrição | Esforço |
 |---|---------|-----------|---------|

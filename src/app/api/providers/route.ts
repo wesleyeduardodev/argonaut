@@ -1,10 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { encrypt, decrypt, maskSecret } from "@/lib/encryption";
+import { getUserId } from "@/lib/auth";
 
 export async function GET() {
   try {
+    const userId = await getUserId();
+
     const providers = await prisma.aIProvider.findMany({
+      where: { userId },
       orderBy: { createdAt: "desc" },
     });
 
@@ -15,6 +19,9 @@ export async function GET() {
 
     return NextResponse.json(masked);
   } catch (error) {
+    if (error instanceof Error && error.message === "Unauthorized") {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
     console.error("Get providers error:", error);
     return NextResponse.json(
       { error: "Internal server error" },
@@ -25,6 +32,7 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
+    const userId = await getUserId();
     const body = await request.json();
     const { name, provider, apiKey, defaultModel, isDefault } = body;
 
@@ -37,7 +45,7 @@ export async function POST(request: NextRequest) {
 
     if (isDefault) {
       await prisma.aIProvider.updateMany({
-        where: { isDefault: true },
+        where: { isDefault: true, userId },
         data: { isDefault: false },
       });
     }
@@ -49,6 +57,7 @@ export async function POST(request: NextRequest) {
         apiKey: encrypt(apiKey),
         defaultModel,
         isDefault: isDefault || false,
+        userId,
       },
     });
 
@@ -57,6 +66,9 @@ export async function POST(request: NextRequest) {
       { status: 201 }
     );
   } catch (error: unknown) {
+    if (error instanceof Error && error.message === "Unauthorized") {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
     if (
       error &&
       typeof error === "object" &&
@@ -78,6 +90,7 @@ export async function POST(request: NextRequest) {
 
 export async function PUT(request: NextRequest) {
   try {
+    const userId = await getUserId();
     const body = await request.json();
     const { id, name, provider, apiKey, defaultModel, isDefault } = body;
 
@@ -85,9 +98,16 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: "id is required" }, { status: 400 });
     }
 
+    const existing = await prisma.aIProvider.findFirst({
+      where: { id, userId },
+    });
+    if (!existing) {
+      return NextResponse.json({ error: "Provider not found" }, { status: 404 });
+    }
+
     if (isDefault) {
       await prisma.aIProvider.updateMany({
-        where: { isDefault: true, NOT: { id } },
+        where: { isDefault: true, NOT: { id }, userId },
         data: { isDefault: false },
       });
     }
@@ -111,6 +131,9 @@ export async function PUT(request: NextRequest) {
       apiKey: maskSecret(decrypt(updated.apiKey)),
     });
   } catch (error) {
+    if (error instanceof Error && error.message === "Unauthorized") {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
     console.error("Update provider error:", error);
     return NextResponse.json(
       { error: "Internal server error" },
@@ -121,6 +144,7 @@ export async function PUT(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   try {
+    const userId = await getUserId();
     const { searchParams } = new URL(request.url);
     const id = searchParams.get("id");
 
@@ -128,9 +152,19 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: "id is required" }, { status: 400 });
     }
 
-    await prisma.aIProvider.delete({ where: { id: Number(id) } });
+    const deleted = await prisma.aIProvider.deleteMany({
+      where: { id: Number(id), userId },
+    });
+
+    if (deleted.count === 0) {
+      return NextResponse.json({ error: "Provider not found" }, { status: 404 });
+    }
+
     return NextResponse.json({ success: true });
   } catch (error) {
+    if (error instanceof Error && error.message === "Unauthorized") {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
     console.error("Delete provider error:", error);
     return NextResponse.json(
       { error: "Internal server error" },
