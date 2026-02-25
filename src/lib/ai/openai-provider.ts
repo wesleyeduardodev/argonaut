@@ -19,11 +19,12 @@ export class OpenAIProvider implements AIProvider {
   async chat(
     messages: AIMessage[],
     onEvent: (event: StreamEvent) => void,
-    getToolResult: (toolCall: ToolCall) => Promise<string>
+    getToolResult: (toolCall: ToolCall) => Promise<string>,
+    systemPrompt?: string
   ): Promise<void> {
     const tools = getOpenAITools();
     const oaiMessages: ChatCompletionMessageParam[] = [
-      { role: "system", content: SYSTEM_PROMPT },
+      { role: "system", content: systemPrompt || SYSTEM_PROMPT },
       ...messages.map(
         (m) =>
           ({

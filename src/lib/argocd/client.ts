@@ -67,6 +67,31 @@ export class ArgoClient {
     return res;
   }
 
+  // ─── Health Check ───
+
+  async ping(): Promise<{ ok: boolean; latency: number }> {
+    const start = Date.now();
+    try {
+      const result = await Promise.race([
+        this.doPing(),
+        new Promise<never>((_, reject) =>
+          setTimeout(() => reject(new Error("timeout")), 5000)
+        ),
+      ]);
+      return { ok: result, latency: Date.now() - start };
+    } catch {
+      return { ok: false, latency: Date.now() - start };
+    }
+  }
+
+  private async doPing(): Promise<boolean> {
+    // Use /api/v1/applications with minimal fields — same endpoint
+    // that chat tools and the test route use, so guaranteed to work
+    // if the server is reachable and credentials are valid.
+    await this.request("/api/v1/applications?fields=items.metadata.name");
+    return true;
+  }
+
   // ─── Applications ───
 
   async listApplications(): Promise<unknown> {

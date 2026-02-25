@@ -14,10 +14,11 @@ const EMPTY_ACTIONS = [
 interface MessageListProps {
   messages: ChatMessage[];
   onQuickAction: (prompt: string) => void;
+  onSuggestionClick?: (prompt: string) => void;
   loading?: boolean;
 }
 
-export default function MessageList({ messages, onQuickAction, loading }: MessageListProps) {
+export default function MessageList({ messages, onQuickAction, onSuggestionClick, loading }: MessageListProps) {
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -60,7 +61,7 @@ export default function MessageList({ messages, onQuickAction, loading }: Messag
   return (
     <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
       {messages.map((msg, i) => (
-        <MessageBubble key={i} message={msg} />
+        <MessageBubble key={i} message={msg} onSuggestionClick={onSuggestionClick} />
       ))}
       <div ref={bottomRef} />
     </div>

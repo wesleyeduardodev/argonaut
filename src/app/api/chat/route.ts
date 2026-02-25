@@ -3,12 +3,51 @@ import { prisma } from "@/lib/db";
 import { decrypt } from "@/lib/encryption";
 import { getUserId } from "@/lib/auth";
 import { createAIProvider } from "@/lib/ai/provider-factory";
+import { buildSystemPrompt } from "@/lib/ai/system-prompt";
 import { ArgoClient } from "@/lib/argocd/client";
 import { executeTool } from "@/lib/tools/executor";
+import { getSuggestions } from "@/lib/tools/suggestions";
 import type { ToolCall } from "@/lib/ai/types";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+
+// In-memory cache for app context per user:server
+const appCache = new Map<string, { data: string; expires: number }>();
+const CACHE_TTL = 5 * 60 * 1000; // 5 min
+
+function getCachedApps(key: string): string | null {
+  const entry = appCache.get(key);
+  if (entry && entry.expires > Date.now()) return entry.data;
+  appCache.delete(key);
+  return null;
+}
+
+async function getAppContext(argoClient: ArgoClient, cacheKey: string): Promise<string | undefined> {
+  const cached = getCachedApps(cacheKey);
+  if (cached) return cached;
+
+  try {
+    const apps = await argoClient.listApplications() as Array<{
+      name: string;
+      syncStatus: string;
+      healthStatus: string;
+    }>;
+
+    if (!apps || apps.length === 0) return undefined;
+
+    const lines = apps.map(
+      (a) => `- ${a.name} (${a.syncStatus || "Unknown"}/${a.healthStatus || "Unknown"})`
+    );
+    const context = lines.join("\n");
+
+    appCache.set(cacheKey, { data: context, expires: Date.now() + CACHE_TTL });
+    return context;
+  } catch {
+    // If we can't fetch apps, proceed without context
+    return undefined;
+  }
+}
 
 export async function POST(request: NextRequest) {
   const encoder = new TextEncoder();
@@ -60,6 +99,11 @@ export async function POST(request: NextRequest) {
     const aiProvider = createAIProvider(providerRecord.provider, apiKey, model);
     const argoClient = new ArgoClient(argoConfig);
 
+    // Fetch app context for system prompt (cached)
+    const cacheKey = `${userId}:${argoServerId}`;
+    const appContext = await getAppContext(argoClient, cacheKey);
+    const systemPrompt = buildSystemPrompt(appContext);
+
     // SSE stream
     const stream = new ReadableStream({
       async start(controller) {
@@ -97,13 +141,16 @@ export async function POST(request: NextRequest) {
                 toolCall.name,
                 toolCall.input
               );
+              const suggestions = getSuggestions(toolCall.name);
               send("tool_call_result", {
                 id: toolCall.id,
                 name: toolCall.name,
                 output: result,
+                ...(suggestions.length > 0 && { suggestions }),
               });
               return result;
-            }
+            },
+            systemPrompt
           );
         } catch (error) {
           let message = "Unknown error";

@@ -44,7 +44,7 @@ function StatusIndicator({ status }: { status: string }) {
   );
 }
 
-export default function MessageBubble({ message }: { message: ChatMessage }) {
+export default function MessageBubble({ message, onSuggestionClick }: { message: ChatMessage; onSuggestionClick?: (prompt: string) => void }) {
   const isUser = message.role === "user";
   const [showLogs, setShowLogs] = useState(false);
   const showStatus =
@@ -83,7 +83,7 @@ export default function MessageBubble({ message }: { message: ChatMessage }) {
         {message.toolCalls && message.toolCalls.length > 0 && (
           <div className="mt-1">
             {message.toolCalls.map((tc) => (
-              <ToolCallDisplay key={tc.id} toolCall={tc} />
+              <ToolCallDisplay key={tc.id} toolCall={tc} onSuggestionClick={onSuggestionClick} />
             ))}
           </div>
         )}

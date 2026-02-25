@@ -16,7 +16,8 @@ export class GeminiProvider implements AIProvider {
   async chat(
     messages: AIMessage[],
     onEvent: (event: StreamEvent) => void,
-    getToolResult: (toolCall: ToolCall) => Promise<string>
+    getToolResult: (toolCall: ToolCall) => Promise<string>,
+    systemPrompt?: string
   ): Promise<void> {
     const tools = getGeminiTools();
     const geminiHistory: Content[] = messages.slice(0, -1).map((m) => ({
@@ -30,7 +31,7 @@ export class GeminiProvider implements AIProvider {
       model: this.model,
       history: geminiHistory,
       config: {
-        systemInstruction: SYSTEM_PROMPT,
+        systemInstruction: systemPrompt || SYSTEM_PROMPT,
         tools: [{ functionDeclarations: tools }],
       },
     });

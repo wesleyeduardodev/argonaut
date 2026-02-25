@@ -1,4 +1,4 @@
-export const SYSTEM_PROMPT = `You are an ArgoCD management assistant. You help users manage Kubernetes applications via ArgoCD tools.
+const BASE_PROMPT = `You are an ArgoCD management assistant. You help users manage Kubernetes applications via ArgoCD tools.
 
 Respond in the user's language. Be concise — short sentences, bullet points, and tables. No filler text. When listing apps or resources, always use a table with columns for name, status, and health.
 
@@ -15,3 +15,16 @@ Respond in the user's language. Be concise — short sentences, bullet points, a
 5. **Errors**: If a tool fails, explain the error briefly and suggest next steps.
 
 6. **Truncation**: Tool outputs may be truncated. Mention it only if it affects the answer.`;
+
+export function buildSystemPrompt(appContext?: string): string {
+  if (!appContext) return BASE_PROMPT;
+  return `${BASE_PROMPT}
+
+## Aplicações Disponíveis
+
+${appContext}
+
+Use this context to answer questions without calling list_applications unless the user explicitly asks to refresh or you need updated data.`;
+}
+
+export const SYSTEM_PROMPT = BASE_PROMPT;

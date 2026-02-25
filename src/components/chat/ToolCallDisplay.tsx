@@ -39,7 +39,12 @@ const TOOL_ICONS: Record<string, string> = {
   list_repositories: "📚",
 };
 
-export default function ToolCallDisplay({ toolCall }: { toolCall: ToolCallResult }) {
+interface ToolCallDisplayProps {
+  toolCall: ToolCallResult;
+  onSuggestionClick?: (prompt: string) => void;
+}
+
+export default function ToolCallDisplay({ toolCall, onSuggestionClick }: ToolCallDisplayProps) {
   const [expanded, setExpanded] = useState(false);
   const isExecuting = !toolCall.output;
   const label = TOOL_LABELS[toolCall.name] || toolCall.name;
@@ -126,6 +131,23 @@ export default function ToolCallDisplay({ toolCall }: { toolCall: ToolCallResult
               </pre>
             </div>
           )}
+        </div>
+      )}
+
+      {toolCall.suggestions && toolCall.suggestions.length > 0 && !isExecuting && (
+        <div className="border-t border-border px-3 py-2 flex flex-wrap gap-2">
+          {toolCall.suggestions.map((s) => (
+            <button
+              key={s.label}
+              onClick={(e) => {
+                e.stopPropagation();
+                onSuggestionClick?.(s.prompt);
+              }}
+              className="px-2.5 py-1 text-xs rounded-full border border-primary/30 bg-primary/5 hover:bg-primary/15 text-primary transition-colors"
+            >
+              {s.label}
+            </button>
+          ))}
         </div>
       )}
     </div>

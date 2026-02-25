@@ -20,7 +20,8 @@ export class ClaudeProvider implements AIProvider {
   async chat(
     messages: AIMessage[],
     onEvent: (event: StreamEvent) => void,
-    getToolResult: (toolCall: ToolCall) => Promise<string>
+    getToolResult: (toolCall: ToolCall) => Promise<string>,
+    systemPrompt?: string
   ): Promise<void> {
     const tools = getClaudeTools();
     const claudeMessages: MessageParam[] = messages.map((m) => ({
@@ -34,7 +35,7 @@ export class ClaudeProvider implements AIProvider {
       const response = await this.client.messages.create({
         model: this.model,
         max_tokens: 4096,
-        system: SYSTEM_PROMPT,
+        system: systemPrompt || SYSTEM_PROMPT,
         tools,
         messages: claudeMessages,
       });

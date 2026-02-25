@@ -244,14 +244,14 @@ Implementação: array de objetos `{ icon, label, prompt }` que ao clicar chamam
 | 2.3 | Sidebar de histórico | Componente com lista de conversas agrupadas por data | Médio |
 | 2.4 | Mobile responsive | Sidebar como drawer, layout adaptado | Médio |
 
-### Fase 3 — Inteligência e Contexto
+### Fase 3 — Chat Inteligente - FEITO
 
 | # | Feature | Descrição | Esforço |
 |---|---------|-----------|---------|
-| 3.1 | Status de conexão | Ping ao ArgoCD server, badge no header | Baixo |
-| 3.2 | Dashboard de apps | Tela alternativa com cards visuais de cada app (health/sync) | Alto |
-| 3.3 | Notificações | Polling que alerta quando app fica OutOfSync/Degraded | Alto |
-| 3.4 | Favoritos | Marcar apps como favoritas para menção rápida | Médio |
+| 3.1 | Contexto de apps | Injetar lista de apps no system prompt para a IA já saber o que existe | Médio |
+| 3.2 | Status de conexão | Ping real ao ArgoCD, badge dinâmico no header | Baixo |
+| 3.3 | Título inteligente | Gerar título da conversa baseado nos tool calls executados | Baixo |
+| 3.4 | Sugestões contextuais | Após tool calls, sugerir próximas ações como chips clicáveis | Médio |
 
 ### Fase 4 — Enterprise
 

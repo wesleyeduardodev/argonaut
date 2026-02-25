@@ -2,6 +2,7 @@
 
 import { useState, useRef, useCallback, useEffect } from "react";
 import type { ChatMessage, ToolCallResult, DebugLogEntry, ChatSessionDetail } from "@/types";
+import { generateTitle } from "@/lib/tools/labels";
 import MessageList from "./MessageList";
 import ChatInput from "./ChatInput";
 import ProviderSelector from "./ProviderSelector";
@@ -61,11 +62,13 @@ export default function ChatInterface({
   const providerRef = useRef<{ id: number; model: string; providerType: string } | null>(null);
   const argoRef = useRef<number | null>(null);
   const sessionRef = useRef<number | null>(sessionId);
+  const titleUpdatedRef = useRef(false);
 
   // Load messages when sessionId is provided
   useEffect(() => {
     if (!sessionId) return;
     sessionRef.current = sessionId;
+    titleUpdatedRef.current = true; // Don't update title for loaded sessions
     setLoadingHistory(true);
 
     fetch(`/api/sessions/${sessionId}/messages`)
@@ -119,6 +122,7 @@ export default function ChatInterface({
 
   async function ensureSession(firstMessage: string): Promise<number> {
     if (sessionRef.current) return sessionRef.current;
+    titleUpdatedRef.current = false; // New session: allow title update
 
     const title = firstMessage.slice(0, 80);
     const provider = providerRef.current?.providerType || null;
@@ -238,6 +242,7 @@ export default function ChatInterface({
                     if (tc) {
                       tc.output = data.output;
                       tc.isError = data.output?.includes('"error"');
+                      if (data.suggestions) tc.suggestions = data.suggestions;
                     }
                     currentStatus = "thinking";
                   }
@@ -290,6 +295,19 @@ export default function ChatInterface({
         assistantText,
         toolCalls.length > 0 ? toolCalls : undefined
       );
+
+      // Generate smart title after first response
+      if (!titleUpdatedRef.current) {
+        titleUpdatedRef.current = true;
+        const smartTitle = generateTitle(toolCalls, content);
+        fetch("/api/sessions", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ id: sid, title: smartTitle }),
+        })
+          .then(() => onMessageSaved())
+          .catch(() => {});
+      }
     } catch (error) {
       const raw = error instanceof Error ? error.message : "Erro de rede";
       log("received", "Fetch error", { message: raw });
@@ -352,7 +370,7 @@ export default function ChatInterface({
       </header>
 
       <div className="flex-1 overflow-hidden flex flex-col max-w-3xl mx-auto w-full">
-        <MessageList messages={messages} onQuickAction={handleSend} loading={loadingHistory} />
+        <MessageList messages={messages} onQuickAction={handleSend} onSuggestionClick={handleSend} loading={loadingHistory} />
 
         {messages.length > 0 && !isLoading && (
           <div className="px-4 pb-2">

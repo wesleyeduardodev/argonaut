@@ -14,12 +14,18 @@ export interface ChatMessage {
   debugLogs?: DebugLogEntry[];
 }
 
+export interface Suggestion {
+  label: string;
+  prompt: string;
+}
+
 export interface ToolCallResult {
   id: string;
   name: string;
   input: Record<string, unknown>;
   output?: string;
   isError?: boolean;
+  suggestions?: Suggestion[];
 }
 
 export interface SSEEvent {

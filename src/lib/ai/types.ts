@@ -18,6 +18,7 @@ export interface AIProvider {
   chat(
     messages: AIMessage[],
     onEvent: (event: StreamEvent) => void,
-    getToolResult: (toolCall: ToolCall) => Promise<string>
+    getToolResult: (toolCall: ToolCall) => Promise<string>,
+    systemPrompt?: string
   ): Promise<void>;
 }
