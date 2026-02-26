@@ -48,3 +48,6 @@ prisma/dev.db-journal
 
 # docker
 pgdata/
+
+# claude code
+.claude/settings.local.json
