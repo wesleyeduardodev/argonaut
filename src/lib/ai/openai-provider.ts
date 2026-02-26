@@ -2,18 +2,22 @@ import OpenAI from "openai";
 import type { AIProvider, AIMessage, StreamEvent, ToolCall } from "./types";
 import { SYSTEM_PROMPT } from "./system-prompt";
 import { getOpenAITools } from "@/lib/tools/openai-format";
+import type { ToolDefinition } from "@/lib/tools/definitions";
 import type {
   ChatCompletionMessageParam,
   ChatCompletionToolMessageParam,
+  ChatCompletionTool,
 } from "openai/resources/chat/completions";
 
 export class OpenAIProvider implements AIProvider {
   private client: OpenAI;
   private model: string;
+  private tools: ChatCompletionTool[];
 
-  constructor(apiKey: string, model: string) {
+  constructor(apiKey: string, model: string, toolDefs: ToolDefinition[]) {
     this.client = new OpenAI({ apiKey });
     this.model = model;
+    this.tools = getOpenAITools(toolDefs);
   }
 
   async chat(
@@ -22,7 +26,6 @@ export class OpenAIProvider implements AIProvider {
     getToolResult: (toolCall: ToolCall) => Promise<string>,
     systemPrompt?: string
   ): Promise<void> {
-    const tools = getOpenAITools();
     const oaiMessages: ChatCompletionMessageParam[] = [
       { role: "system", content: systemPrompt || SYSTEM_PROMPT },
       ...messages.map(
@@ -39,7 +42,7 @@ export class OpenAIProvider implements AIProvider {
     while (continueLoop) {
       const response = await this.client.chat.completions.create({
         model: this.model,
-        tools,
+        tools: this.tools,
         messages: oaiMessages,
       });
 

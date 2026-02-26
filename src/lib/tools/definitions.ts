@@ -12,6 +12,122 @@ export interface ToolDefinition {
   };
 }
 
+export const GIT_TOOLS: ToolDefinition[] = [
+  {
+    name: "search_repositories",
+    description: "Search for Git repositories by name or keyword. Optionally filter by owner/organization.",
+    parameters: {
+      type: "object",
+      properties: {
+        query: { type: "string", description: "Search query (repository name or keyword)" },
+        owner: { type: "string", description: "Filter by owner/organization (optional, uses default owner if not provided)" },
+      },
+      required: ["query"],
+    },
+  },
+  {
+    name: "list_branches",
+    description: "List all branches of a repository",
+    parameters: {
+      type: "object",
+      properties: {
+        owner: { type: "string", description: "Repository owner/organization" },
+        repo: { type: "string", description: "Repository name" },
+      },
+      required: ["owner", "repo"],
+    },
+  },
+  {
+    name: "list_pull_requests",
+    description: "List pull requests of a repository. Defaults to open PRs.",
+    parameters: {
+      type: "object",
+      properties: {
+        owner: { type: "string", description: "Repository owner/organization" },
+        repo: { type: "string", description: "Repository name" },
+        state: { type: "string", description: "PR state filter", enum: ["open", "closed", "all"] },
+      },
+      required: ["owner", "repo"],
+    },
+  },
+  {
+    name: "get_pull_request",
+    description: "Get detailed information about a specific pull request including diff stats, labels, and reviewers",
+    parameters: {
+      type: "object",
+      properties: {
+        owner: { type: "string", description: "Repository owner/organization" },
+        repo: { type: "string", description: "Repository name" },
+        number: { type: "string", description: "Pull request number" },
+      },
+      required: ["owner", "repo", "number"],
+    },
+  },
+  {
+    name: "create_pull_request",
+    description: "Create a new pull request. Requires head branch (source) and base branch (target).",
+    parameters: {
+      type: "object",
+      properties: {
+        owner: { type: "string", description: "Repository owner/organization" },
+        repo: { type: "string", description: "Repository name" },
+        title: { type: "string", description: "PR title" },
+        head: { type: "string", description: "Head branch (source branch with changes)" },
+        base: { type: "string", description: "Base branch (target branch, e.g. main, develop)" },
+        body: { type: "string", description: "PR description (optional)" },
+      },
+      required: ["owner", "repo", "title", "head", "base"],
+    },
+  },
+  {
+    name: "merge_pull_request",
+    description: "Merge a pull request. WARNING: This is a destructive operation that modifies the target branch.",
+    parameters: {
+      type: "object",
+      properties: {
+        owner: { type: "string", description: "Repository owner/organization" },
+        repo: { type: "string", description: "Repository name" },
+        number: { type: "string", description: "Pull request number" },
+        method: { type: "string", description: "Merge method", enum: ["merge", "squash", "rebase"] },
+      },
+      required: ["owner", "repo", "number"],
+    },
+  },
+  {
+    name: "list_workflow_runs",
+    description: "List recent GitHub Actions workflow runs for a repository. Optionally filter by branch.",
+    parameters: {
+      type: "object",
+      properties: {
+        owner: { type: "string", description: "Repository owner/organization" },
+        repo: { type: "string", description: "Repository name" },
+        branch: { type: "string", description: "Filter by branch name (optional)" },
+      },
+      required: ["owner", "repo"],
+    },
+  },
+  {
+    name: "get_workflow_run",
+    description: "Get details of a specific GitHub Actions workflow run",
+    parameters: {
+      type: "object",
+      properties: {
+        owner: { type: "string", description: "Repository owner/organization" },
+        repo: { type: "string", description: "Repository name" },
+        run_id: { type: "string", description: "Workflow run ID" },
+      },
+      required: ["owner", "repo", "run_id"],
+    },
+  },
+];
+
+export function getAllTools(options?: { git?: boolean }): ToolDefinition[] {
+  if (options?.git) {
+    return [...ARGOCD_TOOLS, ...GIT_TOOLS];
+  }
+  return [...ARGOCD_TOOLS];
+}
+
 export const ARGOCD_TOOLS: ToolDefinition[] = [
   {
     name: "list_applications",

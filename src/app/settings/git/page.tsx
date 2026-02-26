@@ -1,8 +1,8 @@
-import ArgoServerList from "@/components/settings/ArgoServerList";
+import GitServerList from "@/components/settings/GitServerList";
 import SettingsTabs from "@/components/settings/SettingsTabs";
 import Link from "next/link";
 
-export default function ArgoServersPage() {
+export default function GitServersPage() {
   return (
     <div className="min-h-screen px-6 py-8 max-w-2xl mx-auto">
       {/* Header */}
@@ -19,7 +19,7 @@ export default function ArgoServersPage() {
           </Link>
           <div>
             <h1 className="font-display text-2xl font-bold text-text tracking-tight">Configuracoes</h1>
-            <p className="text-sm text-text-muted mt-0.5">Gerencie conexoes com servidores ArgoCD</p>
+            <p className="text-sm text-text-muted mt-0.5">Gerencie servidores Git</p>
           </div>
         </div>
       </div>
@@ -29,7 +29,7 @@ export default function ArgoServersPage() {
         <SettingsTabs />
       </div>
 
-      <ArgoServerList />
+      <GitServerList />
     </div>
   );
 }

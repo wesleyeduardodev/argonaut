@@ -1,8 +1,8 @@
-import { ARGOCD_TOOLS } from "./definitions";
+import type { ToolDefinition } from "./definitions";
 import type { ChatCompletionTool } from "openai/resources/chat/completions";
 
-export function getOpenAITools(): ChatCompletionTool[] {
-  return ARGOCD_TOOLS.map((tool) => ({
+export function getOpenAITools(tools: ToolDefinition[]): ChatCompletionTool[] {
+  return tools.map((tool) => ({
     type: "function" as const,
     function: {
       name: tool.name,

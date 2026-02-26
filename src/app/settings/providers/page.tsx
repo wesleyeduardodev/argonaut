@@ -1,11 +1,12 @@
 import ProviderList from "@/components/settings/ProviderList";
+import SettingsTabs from "@/components/settings/SettingsTabs";
 import Link from "next/link";
 
 export default function ProvidersPage() {
   return (
     <div className="min-h-screen px-6 py-8 max-w-2xl mx-auto">
       {/* Header */}
-      <div className="flex items-center justify-between mb-10">
+      <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-4">
           <Link
             href="/"
@@ -17,20 +18,15 @@ export default function ProvidersPage() {
             </svg>
           </Link>
           <div>
-            <h1 className="font-display text-2xl font-bold text-text tracking-tight">Provedores de IA</h1>
-            <p className="text-sm text-text-muted mt-0.5">Configure os provedores de inteligência artificial</p>
+            <h1 className="font-display text-2xl font-bold text-text tracking-tight">Configuracoes</h1>
+            <p className="text-sm text-text-muted mt-0.5">Configure os provedores de inteligencia artificial</p>
           </div>
         </div>
-        <Link
-          href="/settings/argo"
-          className="flex items-center gap-2 px-4 py-2 text-sm bg-surface hover:bg-surface-hover text-text-muted hover:text-text border border-border rounded-xl transition-all"
-        >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
-            <circle cx="12" cy="12" r="10" />
-            <path d="M12 6v6l4 2" />
-          </svg>
-          Servidores ArgoCD
-        </Link>
+      </div>
+
+      {/* Tabs */}
+      <div className="mb-8">
+        <SettingsTabs />
       </div>
 
       <ProviderList />

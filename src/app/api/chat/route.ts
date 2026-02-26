@@ -6,8 +6,12 @@ import { createAIProvider } from "@/lib/ai/provider-factory";
 import { buildSystemPrompt } from "@/lib/ai/system-prompt";
 import { ArgoClient } from "@/lib/argocd/client";
 import { executeTool } from "@/lib/tools/executor";
+import type { ToolContext } from "@/lib/tools/executor";
 import type { OnToolProgress } from "@/lib/tools/executor";
+import { getAllTools } from "@/lib/tools/definitions";
 import { getSuggestions } from "@/lib/tools/suggestions";
+import { createGitProvider } from "@/lib/git/client-factory";
+import type { GitProvider } from "@/lib/git/types";
 import type { ToolCall } from "@/lib/ai/types";
 
 export const runtime = "nodejs";
@@ -56,7 +60,7 @@ export async function POST(request: NextRequest) {
   try {
     const userId = await getUserId();
     const body = await request.json();
-    const { messages, providerId, model, argoServerId } = body;
+    const { messages, providerId, model, argoServerId, gitServerId } = body;
 
     if (!messages || !providerId || !model || !argoServerId) {
       return new Response(
@@ -66,9 +70,12 @@ export async function POST(request: NextRequest) {
     }
 
     // Fetch provider and server configs (scoped to user)
-    const [providerRecord, serverRecord] = await Promise.all([
+    const [providerRecord, serverRecord, gitServerRecord] = await Promise.all([
       prisma.aIProvider.findFirst({ where: { id: Number(providerId), userId } }),
       prisma.argoServer.findFirst({ where: { id: Number(argoServerId), userId } }),
+      gitServerId
+        ? prisma.gitServer.findFirst({ where: { id: Number(gitServerId), userId } })
+        : null,
     ]);
 
     if (!providerRecord) {
@@ -85,6 +92,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    if (gitServerId && !gitServerRecord) {
+      return new Response(
+        JSON.stringify({ error: "Git Server not found" }),
+        { status: 404, headers: { "Content-Type": "application/json" } }
+      );
+    }
+
     // Decrypt credentials
     const apiKey = decrypt(providerRecord.apiKey);
     const argoConfig = {
@@ -97,13 +111,38 @@ export async function POST(request: NextRequest) {
     };
 
     // Create clients
-    const aiProvider = createAIProvider(providerRecord.provider, apiKey, model);
     const argoClient = new ArgoClient(argoConfig);
+
+    let gitClient: GitProvider | undefined;
+    let gitDefaultOwner: string | undefined;
+    if (gitServerRecord) {
+      const gitConfig = {
+        platform: gitServerRecord.platform,
+        url: gitServerRecord.url,
+        token: decrypt(gitServerRecord.token),
+        defaultOwner: gitServerRecord.defaultOwner || undefined,
+      };
+      gitClient = createGitProvider(gitConfig);
+      gitDefaultOwner = gitConfig.defaultOwner;
+    }
+
+    // Build tools list
+    const tools = getAllTools({ git: !!gitClient });
+
+    // Create AI provider with tools
+    const aiProvider = createAIProvider(providerRecord.provider, apiKey, model, tools);
 
     // Fetch app context for system prompt (cached)
     const cacheKey = `${userId}:${argoServerId}`;
     const appContext = await getAppContext(argoClient, cacheKey);
-    const systemPrompt = buildSystemPrompt(appContext);
+    const systemPrompt = buildSystemPrompt({
+      appContext,
+      gitEnabled: !!gitClient,
+      gitDefaultOwner,
+    });
+
+    // Build tool context
+    const toolContext: ToolContext = { argoClient, gitClient };
 
     // SSE stream
     const stream = new ReadableStream({
@@ -144,7 +183,7 @@ export async function POST(request: NextRequest) {
                 });
               };
               const result = await executeTool(
-                argoClient,
+                toolContext,
                 toolCall.name,
                 toolCall.input,
                 onProgress

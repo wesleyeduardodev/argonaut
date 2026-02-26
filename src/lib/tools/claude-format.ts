@@ -1,8 +1,8 @@
-import { ARGOCD_TOOLS } from "./definitions";
+import type { ToolDefinition } from "./definitions";
 import type { Tool } from "@anthropic-ai/sdk/resources/messages";
 
-export function getClaudeTools(): Tool[] {
-  return ARGOCD_TOOLS.map((tool) => ({
+export function getClaudeTools(tools: ToolDefinition[]): Tool[] {
+  return tools.map((tool) => ({
     name: tool.name,
     description: tool.description,
     input_schema: {

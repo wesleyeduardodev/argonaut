@@ -1,4 +1,4 @@
-import { ARGOCD_TOOLS } from "./definitions";
+import type { ToolDefinition } from "./definitions";
 import { Type, type FunctionDeclaration, type Schema } from "@google/genai";
 
 const TYPE_MAP: Record<string, Type> = {
@@ -9,8 +9,8 @@ const TYPE_MAP: Record<string, Type> = {
   array: Type.ARRAY,
 };
 
-export function getGeminiTools(): FunctionDeclaration[] {
-  return ARGOCD_TOOLS.map((tool) => ({
+export function getGeminiTools(tools: ToolDefinition[]): FunctionDeclaration[] {
+  return tools.map((tool) => ({
     name: tool.name,
     description: tool.description,
     parameters: {

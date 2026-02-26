@@ -2,15 +2,18 @@ import { GoogleGenAI } from "@google/genai";
 import type { AIProvider, AIMessage, StreamEvent, ToolCall } from "./types";
 import { SYSTEM_PROMPT } from "./system-prompt";
 import { getGeminiTools } from "@/lib/tools/gemini-format";
-import type { Content, Part } from "@google/genai";
+import type { ToolDefinition } from "@/lib/tools/definitions";
+import type { Content, Part, FunctionDeclaration } from "@google/genai";
 
 export class GeminiProvider implements AIProvider {
   private client: GoogleGenAI;
   private model: string;
+  private tools: FunctionDeclaration[];
 
-  constructor(apiKey: string, model: string) {
+  constructor(apiKey: string, model: string, toolDefs: ToolDefinition[]) {
     this.client = new GoogleGenAI({ apiKey });
     this.model = model;
+    this.tools = getGeminiTools(toolDefs);
   }
 
   async chat(
@@ -19,7 +22,6 @@ export class GeminiProvider implements AIProvider {
     getToolResult: (toolCall: ToolCall) => Promise<string>,
     systemPrompt?: string
   ): Promise<void> {
-    const tools = getGeminiTools();
     const geminiHistory: Content[] = messages.slice(0, -1).map((m) => ({
       role: m.role === "assistant" ? "model" : "user",
       parts: [{ text: m.content }],
@@ -32,7 +34,7 @@ export class GeminiProvider implements AIProvider {
       history: geminiHistory,
       config: {
         systemInstruction: systemPrompt || SYSTEM_PROMPT,
-        tools: [{ functionDeclarations: tools }],
+        tools: [{ functionDeclarations: this.tools }],
       },
     });
 

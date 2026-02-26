@@ -2,19 +2,23 @@ import Anthropic from "@anthropic-ai/sdk";
 import type { AIProvider, AIMessage, StreamEvent, ToolCall } from "./types";
 import { SYSTEM_PROMPT } from "./system-prompt";
 import { getClaudeTools } from "@/lib/tools/claude-format";
+import type { ToolDefinition } from "@/lib/tools/definitions";
 import type {
   MessageParam,
   ContentBlockParam,
   ToolResultBlockParam,
+  Tool,
 } from "@anthropic-ai/sdk/resources/messages";
 
 export class ClaudeProvider implements AIProvider {
   private client: Anthropic;
   private model: string;
+  private tools: Tool[];
 
-  constructor(apiKey: string, model: string) {
+  constructor(apiKey: string, model: string, toolDefs: ToolDefinition[]) {
     this.client = new Anthropic({ apiKey });
     this.model = model;
+    this.tools = getClaudeTools(toolDefs);
   }
 
   async chat(
@@ -23,7 +27,6 @@ export class ClaudeProvider implements AIProvider {
     getToolResult: (toolCall: ToolCall) => Promise<string>,
     systemPrompt?: string
   ): Promise<void> {
-    const tools = getClaudeTools();
     const claudeMessages: MessageParam[] = messages.map((m) => ({
       role: m.role,
       content: m.content,
@@ -36,7 +39,7 @@ export class ClaudeProvider implements AIProvider {
         model: this.model,
         max_tokens: 4096,
         system: systemPrompt || SYSTEM_PROMPT,
-        tools,
+        tools: this.tools,
         messages: claudeMessages,
       });
 

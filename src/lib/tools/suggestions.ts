@@ -43,6 +43,37 @@ const SUGGESTIONS: Record<string, Suggestion[]> = {
     { label: "Ver logs", prompt: "Mostre os logs das aplicações com erro" },
     { label: "Listar apps", prompt: "Liste todas as aplicações com status atualizado" },
   ],
+  // Git tools
+  search_repositories: [
+    { label: "Ver branches", prompt: "Liste as branches desse repositório" },
+    { label: "Ver PRs", prompt: "Liste os pull requests abertos desse repositório" },
+  ],
+  list_branches: [
+    { label: "Criar PR", prompt: "Crie um pull request a partir dessa branch" },
+    { label: "Ver workflows", prompt: "Mostre os workflows dessa branch" },
+  ],
+  list_pull_requests: [
+    { label: "Detalhes PR", prompt: "Mostre detalhes do pull request mais recente" },
+  ],
+  get_pull_request: [
+    { label: "Fazer merge", prompt: "Faça o merge desse pull request" },
+    { label: "Ver CI/CD", prompt: "Mostre o status do CI/CD dessa branch" },
+  ],
+  create_pull_request: [
+    { label: "Ver CI/CD", prompt: "Acompanhe o CI/CD do pull request criado" },
+    { label: "Verificar conflitos", prompt: "O PR tem conflitos de merge?" },
+  ],
+  merge_pull_request: [
+    { label: "Acompanhar CI/CD", prompt: "Mostre o status do pipeline após o merge" },
+    { label: "Sync ArgoCD", prompt: "Sincronize a aplicação no ArgoCD para deployar" },
+  ],
+  list_workflow_runs: [
+    { label: "Detalhes run", prompt: "Mostre detalhes do workflow mais recente" },
+  ],
+  get_workflow_run: [
+    { label: "Ver logs app", prompt: "Mostre os logs da aplicação no ArgoCD" },
+    { label: "Sync ArgoCD", prompt: "Sincronize a aplicação no ArgoCD" },
+  ],
 };
 
 export function getSuggestions(toolName: string): Suggestion[] {

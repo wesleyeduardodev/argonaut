@@ -7,6 +7,7 @@ import MessageList from "./MessageList";
 import ChatInput from "./ChatInput";
 import ProviderSelector from "./ProviderSelector";
 import ArgoSelector from "./ArgoSelector";
+import GitServerSelector from "./GitServerSelector";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
@@ -61,6 +62,7 @@ export default function ChatInterface({
   const [loadingHistory, setLoadingHistory] = useState(false);
   const providerRef = useRef<{ id: number; model: string; providerType: string } | null>(null);
   const argoRef = useRef<number | null>(null);
+  const gitRef = useRef<number | null>(null);
   const sessionRef = useRef<number | null>(sessionId);
   const titleUpdatedRef = useRef(false);
   const abortRef = useRef<AbortController | null>(null);
@@ -96,6 +98,10 @@ export default function ChatInterface({
 
   const handleArgoSelect = useCallback((id: number) => {
     argoRef.current = id;
+  }, []);
+
+  const handleGitServerSelect = useCallback((id: number | null) => {
+    gitRef.current = id;
   }, []);
 
   async function handleLogout() {
@@ -187,6 +193,7 @@ export default function ChatInterface({
       providerId: providerRef.current.id,
       model: providerRef.current.model,
       argoServerId: argoRef.current,
+      ...(gitRef.current && { gitServerId: gitRef.current }),
     };
 
     log("sent", "POST /api/chat", requestBody);
@@ -431,7 +438,9 @@ export default function ChatInterface({
           {/* Desktop: selectors inline */}
           <div className="hidden md:flex items-center gap-3">
             <ProviderSelector onSelect={handleProviderSelect} />
+            <div className="w-px h-4 bg-border flex-shrink-0" />
             <ArgoSelector onSelect={handleArgoSelect} />
+            <GitServerSelector onSelect={handleGitServerSelect} />
           </div>
           <div className="flex items-center gap-0.5 sm:gap-1">
             <Link
@@ -457,11 +466,12 @@ export default function ChatInterface({
             </button>
           </div>
         </div>
-        {/* Mobile: selectors row below */}
-        <div className="md:hidden max-w-3xl mx-auto flex items-center gap-2 mt-2 overflow-x-auto scrollbar-hide">
+        {/* Mobile: selectors rows below */}
+        <div className="md:hidden max-w-3xl mx-auto flex flex-wrap items-center gap-2 mt-2 overflow-x-auto scrollbar-hide">
           <ProviderSelector onSelect={handleProviderSelect} />
           <div className="w-px h-4 bg-border flex-shrink-0" />
           <ArgoSelector onSelect={handleArgoSelect} />
+          <GitServerSelector onSelect={handleGitServerSelect} />
         </div>
       </header>
 
