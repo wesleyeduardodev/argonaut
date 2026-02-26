@@ -102,7 +102,7 @@ export default function ArgoSelector({ onSelect }: ArgoSelectorProps) {
   }
 
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
       <span
         className={`w-2 h-2 rounded-full flex-shrink-0 ${BADGE_COLORS[health]}`}
         title={BADGE_TITLES[health]}
@@ -110,7 +110,7 @@ export default function ArgoSelector({ onSelect }: ArgoSelectorProps) {
       <select
         value={selectedId || ""}
         onChange={(e) => handleChange(Number(e.target.value))}
-        className="px-2 py-1 text-sm bg-surface border border-border rounded-lg text-text focus:outline-none focus:ring-1 focus:ring-primary"
+        className="max-w-[8rem] sm:max-w-none px-2 py-1 text-xs sm:text-sm bg-surface border border-border rounded-lg text-text focus:outline-none focus:ring-1 focus:ring-primary truncate"
       >
         {servers.map((s) => (
           <option key={s.id} value={s.id}>

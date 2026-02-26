@@ -1,12 +1,17 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import Sidebar from "./Sidebar";
 import ChatInterface from "./ChatInterface";
 
 export default function ChatLayout() {
   const [currentSessionId, setCurrentSessionId] = useState<number | null>(null);
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  // Open sidebar on desktop after mount (avoids hydration mismatch)
+  useEffect(() => {
+    if (window.innerWidth >= 768) setSidebarOpen(true);
+  }, []);
   const [refreshKey, setRefreshKey] = useState(0);
   // resetKey only changes on explicit user navigation (sidebar click / new chat),
   // NOT when a session is auto-created during first message send.
@@ -39,7 +44,7 @@ export default function ChatLayout() {
   }, []);
 
   return (
-    <div className="flex h-screen overflow-hidden">
+    <div className="flex h-dvh overflow-hidden">
       <Sidebar
         open={sidebarOpen}
         onClose={() => setSidebarOpen(false)}

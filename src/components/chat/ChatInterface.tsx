@@ -408,13 +408,14 @@ export default function ChatInterface({
   }
 
   return (
-    <div className="flex flex-col h-screen">
-      <header className="border-b border-border px-4 py-2">
+    <div className="flex flex-col h-dvh">
+      <header className="border-b border-border px-3 sm:px-4 py-2 flex-shrink-0">
+        {/* Top row: menu, title, actions */}
         <div className="max-w-3xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-2 md:gap-4">
+          <div className="flex items-center gap-2">
             <button
               onClick={onToggleSidebar}
-              className="p-2 text-text-muted hover:text-text rounded-lg hover:bg-surface-hover transition-colors"
+              className="p-2 -ml-1 text-text-muted hover:text-text rounded-lg hover:bg-surface-hover transition-colors"
               title={sidebarOpen ? "Fechar sidebar" : "Abrir sidebar"}
             >
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
@@ -426,10 +427,13 @@ export default function ChatInterface({
             <h1 className="font-display text-primary font-semibold text-lg tracking-tight hidden sm:block">
               ⎈ Argonaut <span className="text-primary">AI</span>
             </h1>
+          </div>
+          {/* Desktop: selectors inline */}
+          <div className="hidden md:flex items-center gap-3">
             <ProviderSelector onSelect={handleProviderSelect} />
             <ArgoSelector onSelect={handleArgoSelect} />
           </div>
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-0.5 sm:gap-1">
             <Link
               href="/settings/providers"
               className="p-2 text-text-muted hover:text-text rounded-lg hover:bg-surface-hover transition-colors"
@@ -453,19 +457,25 @@ export default function ChatInterface({
             </button>
           </div>
         </div>
+        {/* Mobile: selectors row below */}
+        <div className="md:hidden max-w-3xl mx-auto flex items-center gap-2 mt-2 overflow-x-auto scrollbar-hide">
+          <ProviderSelector onSelect={handleProviderSelect} />
+          <div className="w-px h-4 bg-border flex-shrink-0" />
+          <ArgoSelector onSelect={handleArgoSelect} />
+        </div>
       </header>
 
       <div className="flex-1 overflow-hidden flex flex-col max-w-3xl mx-auto w-full">
         <MessageList messages={messages} onQuickAction={handleSend} onSuggestionClick={handleSend} loading={loadingHistory} />
 
         {messages.length > 0 && !isLoading && (
-          <div className="px-4 pb-2">
-            <div className="flex flex-wrap gap-2 justify-center">
+          <div className="px-3 sm:px-4 pb-2">
+            <div className="flex flex-wrap gap-1.5 sm:gap-2 justify-center">
               {QUICK_ACTIONS.map((action) => (
                 <button
                   key={action.label}
                   onClick={() => handleSend(action.prompt)}
-                  className="px-3 py-1.5 text-xs rounded-full border border-border bg-surface hover:bg-surface-hover text-text-muted hover:text-text transition-colors"
+                  className="px-2.5 sm:px-3 py-1.5 text-xs rounded-full border border-border bg-surface hover:bg-surface-hover text-text-muted hover:text-text transition-colors"
                 >
                   {action.label}
                 </button>

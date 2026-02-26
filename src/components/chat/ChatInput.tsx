@@ -45,9 +45,9 @@ export default function ChatInput({ onSend, onStop, disabled }: ChatInputProps) 
   const hasText = input.trim().length > 0;
 
   return (
-    <form onSubmit={handleSubmit} className="p-4 pb-6">
+    <form onSubmit={handleSubmit} className="p-3 sm:p-4 pb-safe flex-shrink-0">
       <div className="max-w-3xl mx-auto">
-        <div className="flex items-end gap-2 rounded-3xl bg-surface border border-border px-4 py-2 input-glow">
+        <div className="flex items-end gap-2 rounded-2xl sm:rounded-3xl bg-surface border border-border px-3 sm:px-4 py-2 input-glow">
           <textarea
             ref={textareaRef}
             value={input}

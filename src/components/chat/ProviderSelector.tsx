@@ -67,11 +67,11 @@ export default function ProviderSelector({ onSelect }: ProviderSelectorProps) {
   }
 
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
       <select
         value={selectedId || ""}
         onChange={(e) => handleProviderChange(Number(e.target.value))}
-        className="px-2 py-1 text-sm bg-surface border border-border rounded-lg text-text focus:outline-none focus:ring-1 focus:ring-primary"
+        className="max-w-[7rem] sm:max-w-none px-2 py-1 text-xs sm:text-sm bg-surface border border-border rounded-lg text-text focus:outline-none focus:ring-1 focus:ring-primary truncate"
       >
         {providers.map((p) => (
           <option key={p.id} value={p.id}>
@@ -82,7 +82,7 @@ export default function ProviderSelector({ onSelect }: ProviderSelectorProps) {
       <select
         value={selectedModel}
         onChange={(e) => handleModelChange(e.target.value)}
-        className="px-2 py-1 text-sm bg-surface border border-border rounded-lg text-text focus:outline-none focus:ring-1 focus:ring-primary"
+        className="max-w-[8rem] sm:max-w-none px-2 py-1 text-xs sm:text-sm bg-surface border border-border rounded-lg text-text focus:outline-none focus:ring-1 focus:ring-primary truncate"
       >
         {models.map((m) => (
           <option key={m.id} value={m.id}>

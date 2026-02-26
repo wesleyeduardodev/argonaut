@@ -134,7 +134,7 @@ export default function Sidebar({
                         e.stopPropagation();
                         setDeleteTarget(session.id);
                       }}
-                      className="p-1.5 mr-1 rounded opacity-0 group-hover:opacity-100 hover:bg-red-500/10 hover:text-red-400 transition-all"
+                      className="p-2 mr-1 rounded opacity-100 sm:opacity-0 group-hover:opacity-100 hover:bg-red-500/10 hover:text-red-400 transition-all active:scale-90"
                       title="Excluir conversa"
                     >
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
@@ -167,10 +167,10 @@ export default function Sidebar({
       {open && (
         <div className="md:hidden fixed inset-0 z-50 flex">
           <div
-            className="absolute inset-0 bg-black/50"
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm animate-fade-in"
             onClick={onClose}
           />
-          <div className="relative w-72 h-full">
+          <div className="relative w-72 max-w-[85vw] h-full animate-slide-in-left shadow-2xl shadow-black/50">
             {sidebarContent}
           </div>
         </div>

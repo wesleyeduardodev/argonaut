@@ -107,7 +107,7 @@ export default function ProviderList() {
         </div>
       )}
 
-      {/* Empty state */}
+      {/* Empty state / List (hidden when editing) */}
       {providers.length === 0 && !showForm ? (
         <div className="text-center py-16 border border-dashed border-border rounded-2xl">
           <div className="text-5xl mb-4 opacity-50">🤖</div>
@@ -116,7 +116,7 @@ export default function ProviderList() {
             Adicione um provedor de IA como Claude, OpenAI ou Gemini para começar
           </p>
         </div>
-      ) : (
+      ) : !showForm && !editing ? (
         <div className="space-y-3">
           {providers.map((p) => {
             const meta = PROVIDER_META[p.provider] || { icon: "⚙️", label: p.provider, gradient: "from-cyan-500/10 to-transparent" };
@@ -128,60 +128,57 @@ export default function ProviderList() {
                 {/* Subtle gradient background */}
                 <div className={`absolute inset-0 bg-gradient-to-r ${meta.gradient} rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity`} />
 
-                <div className="relative flex items-center justify-between">
-                  <div className="flex items-center gap-4 min-w-0">
-                    {/* Provider icon */}
-                    <div className="flex-shrink-0 w-11 h-11 rounded-xl bg-bg border border-border flex items-center justify-center text-xl shadow-sm">
-                      {meta.icon}
-                    </div>
-
-                    <div className="min-w-0">
-                      <div className="flex items-center gap-2.5">
-                        <span className="font-semibold text-text">{p.name}</span>
-                        {p.isDefault && (
-                          <span className="inline-flex items-center gap-1 text-[10px] uppercase tracking-wider bg-primary/10 text-primary px-2 py-0.5 rounded-full font-semibold border border-primary/20">
-                            <span className="w-1.5 h-1.5 rounded-full bg-primary" />
-                            padrão
-                          </span>
-                        )}
-                      </div>
-                      <div className="flex items-center gap-2 text-xs text-text-muted mt-1">
-                        <span className="font-code">{p.defaultModel}</span>
-                        <span className="text-border">·</span>
-                        <span className="font-code">Key: {p.apiKey}</span>
-                      </div>
-                    </div>
+                <div className="relative flex items-start gap-3 sm:gap-4">
+                  {/* Provider icon */}
+                  <div className="flex-shrink-0 w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-bg border border-border flex items-center justify-center text-lg sm:text-xl shadow-sm">
+                    {meta.icon}
                   </div>
 
-                  {/* Actions */}
-                  <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-all">
-                    <button
-                      onClick={() => setEditing(p)}
-                      className="p-2.5 text-text-muted hover:text-primary hover:bg-primary/10 rounded-xl transition-all"
-                      title="Editar"
-                    >
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-                      </svg>
-                    </button>
-                    <button
-                      onClick={() => setDeleteTarget(p.id)}
-                      className="p-2.5 text-text-muted hover:text-danger hover:bg-danger/10 rounded-xl transition-all"
-                      title="Deletar"
-                    >
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
-                        <polyline points="3 6 5 6 21 6" />
-                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-                      </svg>
-                    </button>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="font-semibold text-text">{p.name}</span>
+                      {p.isDefault && (
+                        <span className="inline-flex items-center gap-1 text-[10px] uppercase tracking-wider bg-primary/10 text-primary px-2 py-0.5 rounded-full font-semibold border border-primary/20">
+                          <span className="w-1.5 h-1.5 rounded-full bg-primary" />
+                          padrão
+                        </span>
+                      )}
+                      {/* Actions inline */}
+                      <div className="flex gap-0.5 ml-auto opacity-100 sm:opacity-0 group-hover:opacity-100 transition-all">
+                        <button
+                          onClick={() => setEditing(p)}
+                          className="p-2 text-text-muted hover:text-primary hover:bg-primary/10 rounded-lg transition-all"
+                          title="Editar"
+                        >
+                          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                          </svg>
+                        </button>
+                        <button
+                          onClick={() => setDeleteTarget(p.id)}
+                          className="p-2 text-text-muted hover:text-danger hover:bg-danger/10 rounded-lg transition-all"
+                          title="Deletar"
+                        >
+                          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
+                            <polyline points="3 6 5 6 21 6" />
+                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                          </svg>
+                        </button>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 text-xs text-text-muted mt-1">
+                      <span className="font-code truncate">{p.defaultModel}</span>
+                      <span className="text-border flex-shrink-0">·</span>
+                      <span className="font-code flex-shrink-0">Key: {p.apiKey}</span>
+                    </div>
                   </div>
                 </div>
               </div>
             );
           })}
         </div>
-      )}
+      ) : null}
 
       <ConfirmModal
         open={deleteTarget !== null}
