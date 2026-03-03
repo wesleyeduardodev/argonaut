@@ -62,6 +62,7 @@ export interface WorkflowRun {
 }
 
 export interface GitProvider {
+  listUserRepositories(owner?: string): Promise<Repository[]>;
   searchRepositories(query: string, owner?: string): Promise<Repository[]>;
   listBranches(owner: string, repo: string): Promise<Branch[]>;
   listPullRequests(owner: string, repo: string, state?: string, head?: string, base?: string): Promise<PullRequest[]>;

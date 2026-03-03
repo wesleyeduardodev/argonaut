@@ -51,6 +51,36 @@ export class GitHubClient implements GitProvider {
     return res.json();
   }
 
+  async listUserRepositories(owner?: string): Promise<Repository[]> {
+    const o = owner || this.defaultOwner;
+    if (!o) {
+      throw new Error("Owner/organization is required. Configure a default owner in Git Server settings or provide one.");
+    }
+
+    // Try as org first, fallback to user
+    let repos: Array<Record<string, unknown>>;
+    try {
+      repos = await this.request<Array<Record<string, unknown>>>(
+        `/orgs/${encodeURIComponent(o)}/repos?per_page=100&sort=updated&direction=desc`
+      );
+    } catch {
+      repos = await this.request<Array<Record<string, unknown>>>(
+        `/users/${encodeURIComponent(o)}/repos?per_page=100&sort=updated&direction=desc`
+      );
+    }
+
+    return repos.map((r) => ({
+      name: r.name as string,
+      fullName: r.full_name as string,
+      description: (r.description as string) || null,
+      private: r.private as boolean,
+      defaultBranch: r.default_branch as string,
+      url: r.html_url as string,
+      language: (r.language as string) || null,
+      updatedAt: r.updated_at as string,
+    }));
+  }
+
   async searchRepositories(query: string, owner?: string): Promise<Repository[]> {
     const o = owner || this.defaultOwner;
     const q = o ? `${query}+org:${o}` : query;

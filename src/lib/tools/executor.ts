@@ -108,6 +108,12 @@ export async function executeTool(
       }
 
       // Git tools
+      case "list_user_repositories":
+        if (!gitClient) return JSON.stringify({ error: "Nenhum servidor Git configurado" });
+        result = await gitClient.listUserRepositories(
+          args.owner as string | undefined
+        );
+        break;
       case "search_repositories":
         if (!gitClient) return JSON.stringify({ error: "Nenhum servidor Git configurado" });
         result = await gitClient.searchRepositories(

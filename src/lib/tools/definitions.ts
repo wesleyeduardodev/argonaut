@@ -14,8 +14,19 @@ export interface ToolDefinition {
 
 export const GIT_TOOLS: ToolDefinition[] = [
   {
+    name: "list_user_repositories",
+    description: "List ALL GitHub repositories of the configured owner/organization. Use this when the user asks to see 'my repos' or 'my repositories'. No search query needed.",
+    parameters: {
+      type: "object",
+      properties: {
+        owner: { type: "string", description: "Owner/organization to list repos from (optional, uses default owner if not provided)" },
+      },
+      required: [],
+    },
+  },
+  {
     name: "search_repositories",
-    description: "Search for GitHub repositories you have access to by name or keyword (not ArgoCD repos — use list_repositories for that).",
+    description: "Search GitHub repositories by name or keyword. Use this when the user wants to FIND a specific repo (not ArgoCD repos — use list_repositories for that).",
     parameters: {
       type: "object",
       properties: {

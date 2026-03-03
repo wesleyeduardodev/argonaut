@@ -44,6 +44,11 @@ const SUGGESTIONS: Record<string, Suggestion[]> = {
     { label: "Listar apps", prompt: "Liste todas as aplicações com status atualizado" },
   ],
   // Git tools
+  list_user_repositories: [
+    { label: "Ver branches", prompt: "Liste as branches desse repositório" },
+    { label: "Ver PRs", prompt: "Liste os pull requests abertos desse repositório" },
+    { label: "Buscar repo", prompt: "Busque um repositório específico" },
+  ],
   search_repositories: [
     { label: "Ver branches", prompt: "Liste as branches desse repositório" },
     { label: "Ver PRs", prompt: "Liste os pull requests abertos desse repositório" },
