@@ -14,7 +14,7 @@ const MAX_OUTPUT_LENGTH = 4000;
 function truncate(data: unknown): string {
   const str = typeof data === "string" ? data : JSON.stringify(data, null, 2);
   if (str.length <= MAX_OUTPUT_LENGTH) return str;
-  return str.slice(0, MAX_OUTPUT_LENGTH) + "\n\n... [output truncated]";
+  return str.slice(0, MAX_OUTPUT_LENGTH) + "\n\n[AVISO: output truncado em 4000 chars. Resultados podem estar incompletos.]";
 }
 
 export async function executeTool(
@@ -38,12 +38,15 @@ export async function executeTool(
       case "sync_application":
         result = await argoClient.syncApplication(args.name as string);
         break;
-      case "rollback_application":
+      case "rollback_application": {
+        const rollbackId = Number(args.id);
+        if (isNaN(rollbackId)) return JSON.stringify({ error: `Invalid rollback ID: ${args.id}` });
         result = await argoClient.rollbackApplication(
           args.name as string,
-          Number(args.id)
+          rollbackId
         );
         break;
+      }
       case "get_application_logs":
         result = await argoClient.getApplicationLogs(
           args.name as string,
@@ -124,17 +127,22 @@ export async function executeTool(
         result = await gitClient.listPullRequests(
           args.owner as string,
           args.repo as string,
-          args.state as string | undefined
+          args.state as string | undefined,
+          args.head as string | undefined,
+          args.base as string | undefined
         );
         break;
-      case "get_pull_request":
+      case "get_pull_request": {
         if (!gitClient) return JSON.stringify({ error: "Nenhum servidor Git configurado" });
+        const prNumber = Number(args.number);
+        if (isNaN(prNumber)) return JSON.stringify({ error: `Invalid PR number: ${args.number}` });
         result = await gitClient.getPullRequest(
           args.owner as string,
           args.repo as string,
-          Number(args.number)
+          prNumber
         );
         break;
+      }
       case "create_pull_request":
         if (!gitClient) return JSON.stringify({ error: "Nenhum servidor Git configurado" });
         result = await gitClient.createPullRequest(
@@ -146,15 +154,18 @@ export async function executeTool(
           args.body as string | undefined
         );
         break;
-      case "merge_pull_request":
+      case "merge_pull_request": {
         if (!gitClient) return JSON.stringify({ error: "Nenhum servidor Git configurado" });
+        const mergeNumber = Number(args.number);
+        if (isNaN(mergeNumber)) return JSON.stringify({ error: `Invalid PR number: ${args.number}` });
         result = await gitClient.mergePullRequest(
           args.owner as string,
           args.repo as string,
-          Number(args.number),
+          mergeNumber,
           args.method as string | undefined
         );
         break;
+      }
       case "list_workflow_runs":
         if (!gitClient) return JSON.stringify({ error: "Nenhum servidor Git configurado" });
         result = await gitClient.listWorkflowRuns(
@@ -163,14 +174,17 @@ export async function executeTool(
           args.branch as string | undefined
         );
         break;
-      case "get_workflow_run":
+      case "get_workflow_run": {
         if (!gitClient) return JSON.stringify({ error: "Nenhum servidor Git configurado" });
+        const runId = Number(args.run_id);
+        if (isNaN(runId)) return JSON.stringify({ error: `Invalid workflow run ID: ${args.run_id}` });
         result = await gitClient.getWorkflowRun(
           args.owner as string,
           args.repo as string,
-          Number(args.run_id)
+          runId
         );
         break;
+      }
 
       default:
         return JSON.stringify({ error: `Unknown tool: ${toolName}` });

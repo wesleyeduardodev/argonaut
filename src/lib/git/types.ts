@@ -45,6 +45,7 @@ export interface PullRequestDetail extends PullRequest {
   mergedBy: string | null;
   reviewers: string[];
   labels: string[];
+  mergeableState: string | null;
 }
 
 export interface WorkflowRun {
@@ -63,7 +64,7 @@ export interface WorkflowRun {
 export interface GitProvider {
   searchRepositories(query: string, owner?: string): Promise<Repository[]>;
   listBranches(owner: string, repo: string): Promise<Branch[]>;
-  listPullRequests(owner: string, repo: string, state?: string): Promise<PullRequest[]>;
+  listPullRequests(owner: string, repo: string, state?: string, head?: string, base?: string): Promise<PullRequest[]>;
   getPullRequest(owner: string, repo: string, number: number): Promise<PullRequestDetail>;
   createPullRequest(owner: string, repo: string, title: string, head: string, base: string, body?: string): Promise<PullRequest>;
   mergePullRequest(owner: string, repo: string, number: number, method?: string): Promise<{ merged: boolean; message: string }>;

@@ -170,6 +170,9 @@ export async function POST(request: NextRequest) {
                     input: event.toolCall.input,
                   });
                   break;
+                case "error":
+                  send("error", { error: event.error });
+                  break;
                 case "done":
                   send("done", {});
                   break;

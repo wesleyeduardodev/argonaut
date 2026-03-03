@@ -1,3 +1,4 @@
+import https from "node:https";
 import type { ArgoServerConfig } from "./types";
 
 export interface BatchSyncProgress {
@@ -76,13 +77,21 @@ export class ArgoClient {
   }
 
   private async rawFetch(path: string, init?: RequestInit): Promise<Response> {
-    return fetch(`${this.baseUrl}${path}`, { ...init });
+    const options: RequestInit = { ...init };
+    if (this.config.insecure) {
+      // Allow self-signed certificates
+      const agent = new https.Agent({ rejectUnauthorized: false });
+      // @ts-expect-error -- Node fetch supports 'agent' but it's not in the RequestInit type
+      options.agent = agent;
+    }
+    return fetch(`${this.baseUrl}${path}`, options);
   }
 
   private async request(path: string, init?: RequestInit): Promise<Response> {
     const token = await this.getToken();
     const res = await this.rawFetch(path, {
       ...init,
+      signal: init?.signal ?? AbortSignal.timeout(15000),
       headers: {
         Authorization: `Bearer ${token}`,
         "Content-Type": "application/json",

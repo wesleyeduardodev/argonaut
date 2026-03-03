@@ -12,6 +12,7 @@ export interface ToolCall {
 export type StreamEvent =
   | { type: "text"; text: string }
   | { type: "tool_call"; toolCall: ToolCall }
+  | { type: "error"; error: string }
   | { type: "done" };
 
 export interface AIProvider {

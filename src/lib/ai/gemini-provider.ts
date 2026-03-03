@@ -9,6 +9,7 @@ export class GeminiProvider implements AIProvider {
   private client: GoogleGenAI;
   private model: string;
   private tools: FunctionDeclaration[];
+  private callIndex = 0;
 
   constructor(apiKey: string, model: string, toolDefs: ToolDefinition[]) {
     this.client = new GoogleGenAI({ apiKey });
@@ -55,7 +56,7 @@ export class GeminiProvider implements AIProvider {
         }
         if (part.functionCall) {
           const tc: ToolCall = {
-            id: `gemini-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+            id: `gemini-${this.callIndex++}`,
             name: part.functionCall.name!,
             input: (part.functionCall.args || {}) as Record<string, unknown>,
           };

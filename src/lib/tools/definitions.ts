@@ -15,7 +15,7 @@ export interface ToolDefinition {
 export const GIT_TOOLS: ToolDefinition[] = [
   {
     name: "search_repositories",
-    description: "Search for Git repositories by name or keyword. Optionally filter by owner/organization.",
+    description: "Search for GitHub repositories you have access to by name or keyword (not ArgoCD repos — use list_repositories for that).",
     parameters: {
       type: "object",
       properties: {
@@ -39,13 +39,15 @@ export const GIT_TOOLS: ToolDefinition[] = [
   },
   {
     name: "list_pull_requests",
-    description: "List pull requests of a repository. Defaults to open PRs.",
+    description: "List pull requests of a repository. Defaults to open PRs. Optionally filter by head (source) and base (target) branch.",
     parameters: {
       type: "object",
       properties: {
         owner: { type: "string", description: "Repository owner/organization" },
         repo: { type: "string", description: "Repository name" },
         state: { type: "string", description: "PR state filter", enum: ["open", "closed", "all"] },
+        head: { type: "string", description: "Filter by head (source) branch name (optional)" },
+        base: { type: "string", description: "Filter by base (target) branch name (optional)" },
       },
       required: ["owner", "repo"],
     },
@@ -286,7 +288,7 @@ export const ARGOCD_TOOLS: ToolDefinition[] = [
   },
   {
     name: "list_repositories",
-    description: "List all Git repositories registered in ArgoCD",
+    description: "List all Git repositories REGISTERED in ArgoCD for deployment (not GitHub repos — use search_repositories for that)",
     parameters: {
       type: "object",
       properties: {},

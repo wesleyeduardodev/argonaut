@@ -32,6 +32,18 @@ export class GitHubClient implements GitProvider {
     });
 
     if (!res.ok) {
+      // Check for rate limit
+      if (res.status === 403 || res.status === 429) {
+        const remaining = res.headers.get("X-RateLimit-Remaining");
+        const resetHeader = res.headers.get("X-RateLimit-Reset");
+        if (remaining === "0" && resetHeader) {
+          const resetDate = new Date(Number(resetHeader) * 1000);
+          const waitMinutes = Math.ceil((resetDate.getTime() - Date.now()) / 60000);
+          throw new Error(
+            `GitHub API rate limit exceeded. Resets at ${resetDate.toISOString()} (in ~${waitMinutes} minutes). Please wait and try again.`
+          );
+        }
+      }
       const text = await res.text();
       throw new Error(`GitHub API error ${res.status}: ${text.slice(0, 300)}`);
     }
@@ -71,9 +83,18 @@ export class GitHubClient implements GitProvider {
     }));
   }
 
-  async listPullRequests(owner: string, repo: string, state = "open"): Promise<PullRequest[]> {
+  async listPullRequests(owner: string, repo: string, state = "open", head?: string, base?: string): Promise<PullRequest[]> {
+    const params = new URLSearchParams({
+      state,
+      per_page: "30",
+      sort: "updated",
+      direction: "desc",
+    });
+    if (head) params.set("head", head.includes(":") ? head : `${owner}:${head}`);
+    if (base) params.set("base", base);
+
     const data = await this.request<Array<Record<string, unknown>>>(
-      `/repos/${owner}/${repo}/pulls?state=${state}&per_page=30&sort=updated&direction=desc`
+      `/repos/${owner}/${repo}/pulls?${params}`
     );
 
     return data.map((pr) => this.mapPullRequest(pr));
@@ -98,6 +119,7 @@ export class GitHubClient implements GitProvider {
       mergedBy: pr.merged_by ? ((pr.merged_by as Record<string, unknown>).login as string) : null,
       reviewers: requestedReviewers.map((r) => r.login as string),
       labels: ((pr.labels as Array<Record<string, unknown>>) || []).map((l) => l.name as string),
+      mergeableState: (pr.mergeable_state as string) || null,
     };
   }
 
@@ -126,6 +148,16 @@ export class GitHubClient implements GitProvider {
     number: number,
     method = "merge"
   ): Promise<{ merged: boolean; message: string }> {
+    // Pre-validation: check PR state before attempting merge
+    const pr = await this.getPullRequest(owner, repo, number);
+
+    if (pr.draft) {
+      return { merged: false, message: "Cannot merge: PR is a draft. Convert to ready for review first." };
+    }
+    if (pr.mergeable === false) {
+      return { merged: false, message: "Cannot merge: PR has conflicts. Resolve conflicts first." };
+    }
+
     const data = await this.request<Record<string, unknown>>(
       `/repos/${owner}/${repo}/pulls/${number}/merge`,
       {

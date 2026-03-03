@@ -72,10 +72,20 @@ export class OpenAIProvider implements AIProvider {
       for (const tc of toolCallsRaw) {
         if (tc.type !== "function") continue;
         const fn = tc.function as { name: string; arguments: string };
+        let parsedArgs: Record<string, unknown>;
+        try {
+          parsedArgs = JSON.parse(fn.arguments || "{}");
+        } catch {
+          onEvent({
+            type: "error",
+            error: `Failed to parse tool arguments for ${fn.name}: ${fn.arguments?.slice(0, 200)}`,
+          });
+          continue;
+        }
         const parsed: ToolCall = {
           id: tc.id,
           name: fn.name,
-          input: JSON.parse(fn.arguments || "{}"),
+          input: parsedArgs,
         };
 
         onEvent({ type: "tool_call", toolCall: parsed });
