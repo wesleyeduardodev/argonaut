@@ -11,7 +11,8 @@ export interface BatchSyncProgress {
     | "batch_failed"
     | "retrying"
     | "complete"
-    | "aborted";
+    | "aborted"
+    | "cancelled";
   totalApps: number;
   totalBatches: number;
   currentBatch: number;
@@ -461,7 +462,8 @@ export class ArgoClient {
     maxRetries = 2,
     healthTimeoutSeconds = 300,
     onProgress?: OnBatchProgress,
-    apps?: string[]
+    apps?: string[],
+    signal?: AbortSignal
   ): Promise<unknown> {
     const POLL_INTERVAL = 10_000; // 10s
 
@@ -550,6 +552,23 @@ export class ArgoClient {
 
     // 3. Process each batch
     for (let batchIdx = 0; batchIdx < batches.length; batchIdx++) {
+      // Check if cancelled before starting next batch
+      if (signal?.aborted) {
+        const remaining = batches.slice(batchIdx).flat();
+        emit("cancelled", batchIdx, remaining, {}, 0, `Cancelled by user. ${completedApps.length} apps synced, ${remaining.length} pending.`);
+        return {
+          success: false,
+          cancelled: true,
+          completedApps,
+          failedApps,
+          pendingApps: remaining,
+          totalApps,
+          completedBatches: batchIdx,
+          totalBatches,
+          message: `Batch sync cancelled. ${completedApps.length} apps synced successfully, ${remaining.length} not attempted.`,
+        };
+      }
+
       const batch = batches[batchIdx];
       const batchNum = batchIdx + 1;
       let batchSuccess = false;
@@ -586,7 +605,9 @@ export class ArgoClient {
         let allHealthy = false;
 
         while (Date.now() < deadline) {
+          if (signal?.aborted) break;
           await new Promise((r) => setTimeout(r, POLL_INTERVAL));
+          if (signal?.aborted) break;
 
           // Check each app's health
           for (const name of batch) {

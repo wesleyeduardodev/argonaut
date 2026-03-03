@@ -144,12 +144,19 @@ export async function POST(request: NextRequest) {
     // Build tool context
     const toolContext: ToolContext = { argoClient, gitClient };
 
+    // Abort controller: signals tool execution to stop when client disconnects
+    const abortController = new AbortController();
+
     // SSE stream
     const stream = new ReadableStream({
       async start(controller) {
         function send(event: string, data: unknown) {
-          const payload = `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`;
-          controller.enqueue(encoder.encode(payload));
+          try {
+            const payload = `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`;
+            controller.enqueue(encoder.encode(payload));
+          } catch {
+            // Stream already closed (client disconnected)
+          }
         }
 
         try {
@@ -189,7 +196,8 @@ export async function POST(request: NextRequest) {
                 toolContext,
                 toolCall.name,
                 toolCall.input,
-                onProgress
+                onProgress,
+                abortController.signal
               );
               const suggestions = getSuggestions(toolCall.name);
               send("tool_call_result", {
@@ -219,6 +227,10 @@ export async function POST(request: NextRequest) {
         } finally {
           controller.close();
         }
+      },
+      cancel() {
+        // Client disconnected (stop button or closed tab) — signal tools to abort
+        abortController.abort();
       },
     });
 

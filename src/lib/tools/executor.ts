@@ -21,7 +21,8 @@ export async function executeTool(
   context: ToolContext,
   toolName: string,
   args: Record<string, unknown>,
-  onProgress?: OnToolProgress
+  onProgress?: OnToolProgress,
+  signal?: AbortSignal
 ): Promise<string> {
   try {
     let result: unknown;
@@ -102,7 +103,8 @@ export async function executeTool(
           maxRetries,
           args.health_timeout_seconds ? Number(args.health_timeout_seconds) : undefined,
           onProgress,
-          appsList
+          appsList,
+          signal
         );
         break;
       }
