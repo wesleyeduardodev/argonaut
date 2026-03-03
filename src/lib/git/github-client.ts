@@ -82,7 +82,6 @@ export class GitHubClient implements GitProvider {
   }
 
   async searchRepositories(query: string, owner?: string): Promise<Repository[]> {
-    const explicitOwner = owner;
     const o = owner || this.defaultOwner;
     const q = o ? `${query}+org:${o}` : query;
 
@@ -92,13 +91,26 @@ export class GitHubClient implements GitProvider {
 
     let items = data.items;
 
-    // Fallback: if scoped search returned nothing and owner was defaulted (not explicit),
-    // retry without the org filter to find repos in other orgs the user has access to
-    if (items.length === 0 && !explicitOwner && o) {
-      const fallback = await this.request<{ items: Array<Record<string, unknown>> }>(
+    // Fallback 1: broad search without org filter
+    if (items.length === 0 && !owner && o) {
+      const broad = await this.request<{ items: Array<Record<string, unknown>> }>(
         `/search/repositories?q=${encodeURIComponent(query)}&per_page=20&sort=updated`
       );
-      items = fallback.items;
+      items = broad.items;
+    }
+
+    // Fallback 2: Search API doesn't reliably find private repos where the user
+    // is only a collaborator. Use /user/repos which lists ALL accessible repos.
+    if (items.length === 0) {
+      const allRepos = await this.request<Array<Record<string, unknown>>>(
+        `/user/repos?per_page=100&sort=updated&affiliation=owner,collaborator,organization_member`
+      );
+      const lowerQuery = query.toLowerCase();
+      items = allRepos.filter((r) => {
+        const name = (r.name as string || "").toLowerCase();
+        const fullName = (r.full_name as string || "").toLowerCase();
+        return name.includes(lowerQuery) || fullName.includes(lowerQuery);
+      });
     }
 
     return items.map((r) => ({
