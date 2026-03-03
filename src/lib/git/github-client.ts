@@ -82,6 +82,7 @@ export class GitHubClient implements GitProvider {
   }
 
   async searchRepositories(query: string, owner?: string): Promise<Repository[]> {
+    const explicitOwner = owner;
     const o = owner || this.defaultOwner;
     const q = o ? `${query}+org:${o}` : query;
 
@@ -89,7 +90,18 @@ export class GitHubClient implements GitProvider {
       `/search/repositories?q=${encodeURIComponent(q)}&per_page=20&sort=updated`
     );
 
-    return data.items.map((r) => ({
+    let items = data.items;
+
+    // Fallback: if scoped search returned nothing and owner was defaulted (not explicit),
+    // retry without the org filter to find repos in other orgs the user has access to
+    if (items.length === 0 && !explicitOwner && o) {
+      const fallback = await this.request<{ items: Array<Record<string, unknown>> }>(
+        `/search/repositories?q=${encodeURIComponent(query)}&per_page=20&sort=updated`
+      );
+      items = fallback.items;
+    }
+
+    return items.map((r) => ({
       name: r.name as string,
       fullName: r.full_name as string,
       description: (r.description as string) || null,
