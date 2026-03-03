@@ -229,6 +229,9 @@
 }
 
 /* ─── Mobile: safe area padding for notched phones ─── */
+.pt-safe {
+  padding-top: env(safe-area-inset-top);
+}
 .pb-safe {
   padding-bottom: max(1.5rem, env(safe-area-inset-bottom));
 }

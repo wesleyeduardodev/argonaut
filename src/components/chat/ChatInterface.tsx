@@ -416,10 +416,10 @@ export default function ChatInterface({
 
   return (
     <div className="flex flex-col h-dvh">
-      <header className="border-b border-border px-3 sm:px-4 py-2 flex-shrink-0">
+      <header className="border-b border-border px-3 sm:px-4 py-2 pt-safe flex-shrink-0">
         {/* Top row: menu, title, actions */}
-        <div className="max-w-3xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-2">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2 flex-shrink-0">
             <button
               onClick={onToggleSidebar}
               className="p-2 -ml-1 text-text-muted hover:text-text rounded-lg hover:bg-surface-hover transition-colors"
@@ -431,7 +431,7 @@ export default function ChatInterface({
                 <line x1="3" y1="18" x2="21" y2="18" />
               </svg>
             </button>
-            <h1 className="font-display text-primary font-semibold text-lg tracking-tight hidden sm:block">
+            <h1 className="font-display text-primary font-semibold text-lg tracking-tight hidden sm:block whitespace-nowrap">
               ⎈ Argonaut <span className="text-primary">AI</span>
             </h1>
           </div>
@@ -466,10 +466,11 @@ export default function ChatInterface({
             </button>
           </div>
         </div>
-        {/* Mobile: selectors rows below */}
-        <div className="md:hidden max-w-3xl mx-auto flex flex-wrap items-center gap-2 mt-2 overflow-x-auto scrollbar-hide">
-          <ProviderSelector onSelect={handleProviderSelect} />
-          <div className="w-px h-4 bg-border flex-shrink-0" />
+        {/* Mobile: selectors in 2-column grid */}
+        <div className="md:hidden grid grid-cols-2 gap-2 mt-2">
+          <div className="col-span-2">
+            <ProviderSelector onSelect={handleProviderSelect} />
+          </div>
           <ArgoSelector onSelect={handleArgoSelect} />
           <GitServerSelector onSelect={handleGitServerSelect} />
         </div>
